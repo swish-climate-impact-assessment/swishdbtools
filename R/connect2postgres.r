@@ -1,12 +1,7 @@
-
 #################
- # newnode func-connect2postgres
- # The data were pre-processed using a PostgreSQL 8.4 database with PostGIS 1.5.
- # The analyses were performed on a linux R server R 2.13.1 
- # if you have ethical approval from the ANU and the ABS then you will be able to access these data 
- # and replicate the results using the following code.
+# connect2postgres
 
-connect2postgres <- function(hostip=NA,db=NA,user=NA, p=NA, os = 'linux', pgutils = c('/home/ivan/tools/jdbc','c:/pgutils')){
+connect2postgres <- function(hostip=NA,db=NA,user=NA, p=NA, os = 'linux', pgutils = c('c:/pgutils')){
  if(is.na(hostip)){
  hostip=readline('enter hostip: ')
  } 
