@@ -1,7 +1,7 @@
 Package: swishdbtools
 Type: Package
-Title: What the package does (short line)
-Version: 1.0
+Title: Database tools for use with the SWISH project
+Version: 1.1
 Date: 2012-12-13
 Author: ivanhanigan
 Maintainer: Who to complain to <ivan.hanigan@gmail.com>
