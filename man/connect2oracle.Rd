@@ -62,9 +62,12 @@ did install.packages('rJava') and then
 %% ~~objects to See Also as \code{\link{help}}, ~~~
 }
 \examples{
-# example using the SWISH EWEDB.
+# example using the SWISH Extreme Weather Eventds DataBase (EWEDB).
+# NB only powerusers will know the password.
 ch <- connect2oracle(hostip = '115.146.93.225', db = 'DDIINDEXDB')
-s <- dbGetQuery(ch, "select * from stdydscr where IDNO = ''")
+stdydscr <- dbGetQuery(ch, "select * from stdydscr where IDNO = 'EWEDB'")
+t(stdydscr)
+
 
 
 }

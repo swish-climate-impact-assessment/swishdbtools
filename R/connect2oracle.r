@@ -6,7 +6,7 @@
 # put into /lib
 ##  did install.packages('rJava') and then
 # "R CMD javareconf" as root
-connect2oracle <- function(hostip=NA,db=NA, p=NA,
+connect2oracle <- function(hostip=NA, db=NA, p=NA,
                            driverlocation='/lib/ojdbc6.jar'){
   if(!require(RJDBC)) install.packages('RJDBC'); require(RJDBC)
   drv <- JDBC("oracle.jdbc.driver.OracleDriver",
@@ -18,22 +18,13 @@ connect2oracle <- function(hostip=NA,db=NA, p=NA,
   if(is.na(db)){
     db=readline('enter db: ')
   }
-  if(is.na(user)){
-    user=readline('enter user: ')
-  }
+
   if(is.na(p)){
-    pwd=readline(paste('enter password for user ',user, ': ',sep=''))
+    pwd=readline(paste('enter password for ',db, ': ',sep=''))
   } else {
     pwd <- p
   }
   
-  ## p <- readline('enter password: ')
-  ## h <- readline('enter target ipaddres: ')
-  ## d <- readline('enter database name: ')
   ch <- dbConnect(drv,paste("jdbc:oracle:thin:@",hostip,":1521",sep=''),db,pwd)
   return(ch)
 }
-#ch <- connect2oracle(hostip = '115.146.93.225', db = 'DDIINDEXDB', user = 'ivan_hanigan')
-#dir.create('metadata')
-#s <- dbGetQuery(ch, "select * from stdydscr where IDNO = 'BOUNDARIES_ELECTORATES'")
-
