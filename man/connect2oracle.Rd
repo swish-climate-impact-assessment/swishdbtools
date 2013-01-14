@@ -62,9 +62,9 @@ did install.packages('rJava') and then
 %% ~~objects to See Also as \code{\link{help}}, ~~~
 }
 \examples{
-#ch <- connect2oracle(hostip = '115.146.93.225', db = 'DDIINDEXDB', user = 'ivan_hanigan')
-#dir.create('metadata')
-#s <- dbGetQuery(ch, "select * from stdydscr where IDNO = 'BOUNDARIES_ELECTORATES'")
+# example using the SWISH EWEDB.
+ch <- connect2oracle(hostip = '115.146.93.225', db = 'DDIINDEXDB')
+s <- dbGetQuery(ch, "select * from stdydscr where IDNO = ''")
 
 
 }
