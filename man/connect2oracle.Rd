@@ -8,22 +8,19 @@ connect to a oracle db
 connect to a oracle db
 }
 \usage{
-connect2oracle(hostip=NA,db=NA,user=NA, p=NA, driverlocation='/lib/ojdbc6.jar')
+connect2oracle(hostip=NA, db=NA, p=NA, driverlocation='/lib/ojdbc6.jar')
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
 
   \item{hostip}{
-%%     ~~Describe \code{hostip} here~~
+IP address as string
 }
   \item{db}{
-%%     ~~Describe \code{db} here~~
-}
-  \item{user}{
-%%     ~~Describe \code{user} here~~
+Database (Workspace) name 
 }
   \item{p}{
-%%     ~~Describe \code{p} here~~
+password 
 }
   \item{driverlocation}{
 defaults to linux location.  not tested on windoze.
