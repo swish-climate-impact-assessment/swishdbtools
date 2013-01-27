@@ -1,0 +1,186 @@
+#+TITLE:swishdbtools overview 
+#+AUTHOR: Ivan Hanigan
+#+email: ivan.hanigan@anu.edu.au
+#+LaTeX_CLASS: article
+#+LaTeX_CLASS_OPTIONS: [a4paper]
+#+LATEX: \tableofcontents
+-----
+
+* Introduction
+* R
+** sql_subset.r
+#+name:sql_subset
+#+begin_src R :session *R* :tangle R/sql_subset.r :exports none :eval no
+################################################################
+# name:sqlquery_select
+
+sql_subset <- function(conn, x, subset = NA, select = "*",
+                            schema = 'public',
+                            limit = -1, eval = FALSE)
+{
+  # assume ch exists
+  exists <- pgListTables(conn, schema, x)
+  if(nrow(exists) == 0)
+    {
+      stop("Table doesn't exist.")
+    }
+
+  if(select=="*")
+    {
+      select <- names(
+                     dbGetQuery(conn,
+                      paste("select ", select, " from ",
+                      schema, ".",
+                      x, " limit 1",
+                      sep = ""))
+                     )
+      select <- paste(select, collapse = ", ", sep = "")
+    }
+
+  sqlquery <- paste("select ", select, "\nfrom ", schema, ".",
+                    x, "\n",
+                    sep = "")
+
+  if(!is.na(subset))
+    {
+      sqlquery <- paste(sqlquery, "where ", subset, "\n", sep = "")
+    }
+
+  if(limit > 0)
+    {
+      sqlquery <- paste(sqlquery, "limit ", limit, "\n", sep = "")
+    }
+
+  if(eval)
+    {
+      dat <- dbGetQuery(conn,sqlquery)
+      return(dat)
+    } else {
+      return(sqlquery)
+    }
+
+}
+
+#+end_src
+
+* man
+** sql_subset.Rd
+#+name:sql_subset
+#+begin_src R :session *R* :tangle man/sql_subset.Rd :exports none :eval no
+\name{sql_subset}
+\alias{sql_subset}
+%- Also NEED an '\alias' for EACH other topic documented here.
+\title{
+sql_subset
+}
+\description{
+Constructs an SQL query for a postgres database. Modelled on the base R function 'subset'.
+}
+\usage{
+sql_subset(conn, x, subset, select, schema, limit, eval)
+}
+%- maybe also 'usage' for other objects documented here.
+\arguments{
+  \item{conn}{
+%%     ~~Describe \code{remote} here~~
+database connection
+}
+ \item{x}{
+%%     ~~Describe \code{remote} here~~
+the table name
+}
+ \item{subset}{
+%%     ~~Describe \code{remote} here~~
+the SQL 'where' statement
+}
+ \item{select}{
+%%     ~~Describe \code{remote} here~~
+which variables to include
+}
+ \item{schema}{
+%%     ~~Describe \code{remote} here~~
+the schema that has the table in it
+}
+ \item{limit}{
+%%     ~~Describe \code{remote} here~~
+limit, often useful for debugging
+}
+ \item{eval}{
+%%     ~~Describe \code{remote} here~~
+evaluate the query on the database?
+}
+}
+\details{
+%%  ~~ If necessary, more details than the description above ~~
+}
+\value{
+%%  ~Describe the value returned
+%%  If it is a LIST, use
+%%  \item{comp1 }{Description of 'comp1'}
+%%  \item{comp2 }{Description of 'comp2'}
+%% ...
+}
+\references{
+%% ~put references to the literature/web site here ~
+}
+\author{
+ivanhanigan
+}
+\note{
+%%  ~~further notes~~
+}
+
+%% ~Make other sections like Warning with \section{Warning }{....} ~
+
+\seealso{
+%% ~~objects to See Also as \code{\link{help}}, ~~~
+}
+\examples{
+ch <- connect2postgres('115.146.84.135', db='ewedb',
+                       user='gislibrary', p='gislibrary')
+sql <- sql_subset(conn=ch, x='spatial_ref_sys',
+                  subset = "srid = 4283", select='srid, srtext',
+                  limit = 2, eval = T)
+  
+  
+}
+% Add one or more standard keywords, see file 'KEYWORDS' in the
+% R documentation directory.
+\keyword{ ~kwd1 }
+\keyword{ ~kwd2 }% __ONLY ONE__ keyword per line
+
+#+end_src
+
+* tests
+** test-sql_subset.r
+#+name:test-sql_subset.r
+#+begin_src R :session *R* :tangle tests/test-sql_subset.r :exports none :eval no
+  ## install.packages("~/tools/swishdbtools_1.1_R_x86_64-pc-linux-gnu.tar.gz", repos = NULL, type = "source")
+  ## require(swishdbtools)
+  ##  ch <- connect2postgres('localhost', db='django', user='gislibrary', p='gislibrary')
+  ## test_that('postgis data exists', {
+  ##   expect_that(is.character(sqlquery_select(conn=ch, select='srid, srtext',x='spatial_ref_sys', limit = 2, subset = "srid = 4283", eval = F)), is_true())
+  ##   expect_that(nrow(sqlquery_select(conn=ch, select='srid, srtext',x='spatial_ref_sys', limit = 2, subset = "srid = 4283", eval = T))==1, is_true())
+  ## })
+  
+  #
+  # # dev tests
+  ##  ch <- connect2postgres('115.146.84.135', db='ewedb', user='gislibrary', p='gislibrary')
+  ##  sql <- sql_subset(conn=ch, x='spatial_ref_sys',
+  ##                    subset = "srid = 4283", select='srid, srtext',
+  ##                    limit = 2, eval = T)
+  ## ## cat(sql) # if eval=F
+  ##  nrow(sql)==1 # if eval=T
+  ## #### from subset man page ####
+  ## head(subset(airquality, Temp > 80, select = c(Ozone, Temp)))
+  ## str(airquality)
+  ## # tempdata <- airquality
+  ## # names(tempdata) <- tolower(names(tempdata))
+  ## # names(tempdata) <- gsub('\\.', '_',names(tempdata))
+  ## # str(tempdata)
+  ## # dbWriteTable(ch, 'airquality', tempdata)
+  ## # rm(tempdata)
+  ## sql_subset(ch, 'airquality', 'Temp > 80', 'Ozone, Temp', eval = T)
+  ## sql_subset(ch, 'dbsize', select = '*', eval=T)
+  
+#+end_src

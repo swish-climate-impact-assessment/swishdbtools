@@ -1,20 +1,45 @@
 
-\name{getPassword}
-\alias{getPassword}
+\name{sql_subset}
+\alias{sql_subset}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
-getPassword
+sql_subset
 }
 \description{
-getPassword
+Constructs an SQL query for a postgres database. Modelled on the base R function 'subset'.
 }
 \usage{
-getPassword(remote = F)
+sql_subset(conn, x, subset, select, schema, limit, eval)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
-  \item{remote}{
+  \item{conn}{
 %%     ~~Describe \code{remote} here~~
+database connection
+}
+ \item{x}{
+%%     ~~Describe \code{remote} here~~
+the table name
+}
+ \item{subset}{
+%%     ~~Describe \code{remote} here~~
+the SQL 'where' statement
+}
+ \item{select}{
+%%     ~~Describe \code{remote} here~~
+which variables to include
+}
+ \item{schema}{
+%%     ~~Describe \code{remote} here~~
+the schema that has the table in it
+}
+ \item{limit}{
+%%     ~~Describe \code{remote} here~~
+limit, often useful for debugging
+}
+ \item{eval}{
+%%     ~~Describe \code{remote} here~~
+evaluate the query on the database?
 }
 }
 \details{
@@ -43,29 +68,13 @@ ivanhanigan
 %% ~~objects to See Also as \code{\link{help}}, ~~~
 }
 \examples{
-##---- Should be DIRECTLY executable !! ----
-##-- ==>  Define data, use random,
-##--    or do  help(data=index)  for the standard data sets.
-
-## The function is currently defined as
-function (remote = F) 
-{
-    if (remote == F) {
-        require(tcltk)
-        tt <- tktoplevel()
-        pass = tclVar("")
-        label.widget <- tklabel(tt, text = "Enter Password")
-        password.widget <- tkentry(tt, show = "*", textvariable = pass)
-        ok <- tkbutton(tt, text = "Ok", command = function() tkdestroy(tt))
-        tkpack(label.widget, password.widget, ok)
-        tkwait.window(tt)
-        return(tclvalue(pass))
-    }
-    else {
-        pass <- readline("Type your password into the console: ")
-        return(pass)
-    }
-  }
+ch <- connect2postgres('115.146.84.135', db='ewedb',
+                       user='gislibrary', p='gislibrary')
+sql <- sql_subset(conn=ch, x='spatial_ref_sys',
+                  subset = "srid = 4283", select='srid, srtext',
+                  limit = 2, eval = T)
+  
+  
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
