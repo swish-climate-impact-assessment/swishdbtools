@@ -2,9 +2,9 @@
 ################################################################
 # name:sqlquery_select
 
-sql_subset <- function(conn, x, subset=NA, select="*",
+sql_subset <- function(conn, x, subset = NA, select = "*",
                             schema = 'public',
-                            limit=1, eval = FALSE)
+                            limit = -1, eval = FALSE)
 {
   # assume ch exists
   exists <- pgListTables(conn, schema, x)
