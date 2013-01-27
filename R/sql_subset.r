@@ -2,36 +2,36 @@
 ################################################################
 # name:sqlquery_select
 
-sql_subset <- function(conn, x, select="*",
-                            from_schema = 'public', from_table,
-                            where=NA, limit=1, eval = FALSE)
+sql_subset <- function(conn, x, subset=NA, select="*",
+                            schema = 'public',
+                            limit=1, eval = FALSE)
 {
   # assume ch exists
-  exists <- pgListTables(channel, from_schema, from_table)
+  exists <- pgListTables(conn, schema, x)
   if(nrow(exists) == 0)
     {
       stop("Table doesn't exist.")
     }
 
-  if(variables=="*")
+  if(select=="*")
     {
-      variables <- names(
-                     dbGetQuery(channel,
-                      paste("select ", variables, " from ",
-                      from_schema, ".",
-                      from_table, " limit 1",
+      select <- names(
+                     dbGetQuery(conn,
+                      paste("select ", select, " from ",
+                      schema, ".",
+                      x, " limit 1",
                       sep = ""))
                      )
-      variables <- paste(variables, collapse = ", ", sep = "")
+      select <- paste(select, collapse = ", ", sep = "")
     }
 
-  sqlquery <- paste("select ", variables, "\nfrom ", from_schema, ".",
-                    from_table, "\n",
+  sqlquery <- paste("select ", select, "\nfrom ", schema, ".",
+                    x, "\n",
                     sep = "")
 
-  if(!is.na(where))
+  if(!is.na(subset))
     {
-      sqlquery <- paste(sqlquery, "where ", where, "\n", sep = "")
+      sqlquery <- paste(sqlquery, "where ", subset, "\n", sep = "")
     }
 
   if(limit > 0)
@@ -41,7 +41,7 @@ sql_subset <- function(conn, x, select="*",
 
   if(eval)
     {
-      dat <- dbGetQuery(channel,sqlquery)
+      dat <- dbGetQuery(conn,sqlquery)
       return(dat)
     } else {
       return(sqlquery)
