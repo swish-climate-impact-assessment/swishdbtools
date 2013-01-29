@@ -191,3 +191,37 @@ sql <- sql_subset(conn=ch, x='spatial_ref_sys',
 #+end_src
 
 
+** sql_subset_into
+*** test-sql_subset_into
+#+name:test-sql_subset_into
+#+begin_src R :session *R* :tangle tests/test-sql_subset_into.r :exports none :eval no
+source("R/sql_subset.r")
+source("R/sql_subset_into.r")
+source("R/pgListTables.r")
+
+ch <- connect2postgres('115.146.84.135', db='ewedb', user='gislibrary', p='gislibrary')
+sql_subset_into(ch, 'dbsize',into_table='temp101', select = '*', eval=T)
+dbSendQuery(ch, 'drop table temp101')
+#+end_src
+
+
+*** R-sql_subset_into
+#+name:sql_subset_into
+#+begin_src R :session *R* :tangle R/sql_subset_into.r :exports none :eval no
+sql_subset_into <- function(conn, x, ..., into_schema = "public", into_table, eval = FALSE)
+{
+  sql <- sql_subset(ch, x=x, select = '*', eval=F) 
+  sql <- gsub('from', paste("into ", into_schema, ".", into_table, "\nfrom ", sep = ""), sql)
+  if(eval)
+  {
+    exists <- pgListTables(conn, into_schema, into_table)
+    if(nrow(exists) == 0)
+    dbSendQuery(conn, sql)
+    dat <- dbGetQuery(conn, paste("select * from ", into_schema, ".", into_table, sep = ""))
+    return(dat)
+  } else {
+    return(sql)
+  }
+}
+#+end_src
+
