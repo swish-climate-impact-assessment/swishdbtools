@@ -12,6 +12,7 @@
 *** test-sql_subset.r
 #+name:test-sql_subset.r
 #+begin_src R :session *R* :tangle tests/test-sql_subset.r :exports none :eval no
+  
   ## install.packages("~/tools/swishdbtools_1.1_R_x86_64-pc-linux-gnu.tar.gz", repos = NULL, type = "source")
   require(swishdbtools)
   ##  ch <- connect2postgres('localhost', db='django', user='gislibrary', p='gislibrary')
@@ -40,7 +41,10 @@
   # str(tempdata)
   # dbWriteTable(ch, 'airquality', tempdata)
   # rm(tempdata)
-  sql_subset(ch, 'airquality', 'Temp > 80', 'Ozone, Temp', eval = T)
+  source("R/sql_subset.r")
+  #sql_subset(ch, 'airquality', 'Temp > 80', 'Ozone, Temp', eval = T)
+  sql_subset(ch, 'dbsize', select = '*', into_table = 'temp101', eval=T)
+  dbSendQuery(ch, 'drop table temp101')
   sql_subset(ch, 'dbsize', select = '*', eval=T)
   
 #+end_src
