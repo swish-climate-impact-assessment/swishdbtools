@@ -19,4 +19,4 @@ datadscr <- dbGetQuery(ch,
                    sep = "")
                        )
 
-dditest <- make_ddixml(s = stdydscr, f=file, d=datadscr)
+make_ddixml(s = stdydscr, f=file, d=datadscr, writeXML= T)
