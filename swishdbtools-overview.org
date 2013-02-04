@@ -8,6 +8,164 @@
 
 * Introduction
 * functions
+** load2postgres
+*** test-load2postgres
+#+name:test-load2postgres
+#+begin_src R :session *R* :tangle tests/test-load2postgres.r :exports none :eval no
+################################################################
+# name:test-load2postgres
+
+#+end_src
+
+*** R-load2postgres
+#+name:load2postgres
+#+begin_src R :session *R* :tangle R/load2postgres.r :exports none :eval no
+################################################################
+# name:load2postgres
+# tools for loading data to postgres
+# Joseph Guillame and Ivan Hanigan
+# original by Joe 24/3/2009
+
+# TO DO:
+## set the vacuum automatically when printcopy=F
+## on linux replace the 'type' command with 'cat'
+
+# load_newtable_to_postgres = Convert to csv and load to postgres
+# pk as either column names as they appear at the end or column indices
+
+# inspired from
+#odbc_dsn="pg"
+#require(RODBC)
+#con<-odbcConnect(odbc_dsn,"postgres","test",case="postgresql")
+#sqlSave(con,data[0,],test=TRUE,verbose=TRUE)
+#close(con)
+
+# source file could be
+#source_file=paste("E'", csvfilename,"'",sep="")
+
+
+# if (!file.exists('C:/pgutils/psql.exe')) {
+# dir.create('c:/pgutils')
+# download.file("http://alliance.anu.edu.au/access/content/group/4e0f55f1-b540-456a-000a-24730b59fccb/pgutils.zip","c:/pgutils/pgutils.zip",mode="wb")
+# unzip("c:/pgutils/pgutils.zip",exdir="C:/pgutils")
+# }
+# not working
+# print('please download http://alliance.anu.edu.au/access/content/group/4e0f55f1-b540-456a-000a-24730b59fccb/pgutils.zip')
+
+load2postgres <- function(inputfilepath,schema,tablename,pk=NULL,header=TRUE,printcopy=TRUE,sheetname="Sheet1",withoids=FALSE,pguser="username",db='databasename',ip='ipaddress',source_file="STDIN",datecol=NULL,nrowscsv=10000,pgpath=c('c:\\pgutils\\psql')){
+  if (!require(RODBC)) install.packages('RODBC'); require(RODBC) # for getSqlTypeInfo
+  table=paste(schema,".",tablename,sep="")
+  
+  ext<-substr(inputfilepath,nchar(inputfilepath)-2,nchar(inputfilepath))
+  #print(ext)
+  
+  if (ext=="dbf"){
+    require(foreign)
+    data<-read.dbf(inputfilepath,as.is=TRUE)
+    csvfilename=sub(".dbf",".csv",basename(inputfilepath))
+    csvfilename=paste(getwd(),csvfilename,sep="/")
+    write.csv(data,csvfilename,row.names=FALSE,na="")
+  }
+  else if (ext=="csv" || ext=="txt"){
+    #or from csv originally
+    csvfilename<-inputfilepath
+    data<-read.csv(csvfilename,stringsAsFactors=FALSE,header=header,strip.white=TRUE,nrows=nrowscsv)
+    names(data)<-gsub("\\.","_",names(data))
+    names(data)<-gsub("_+","_",names(data))
+  }
+  else if (ext=="xls"){
+    odbcf<-odbcConnectExcel(inputfilepath)
+    data<-sqlFetch(odbcf,sheetname,as.is=TRUE)
+    csvfilename=sub(".xls",".csv",basename(inputfilepath))
+    csvfilename=paste(getwd(),csvfilename,sep="/")
+    write.csv(data,csvfilename,row.names=FALSE,na="")
+  }
+  else print("Unknown extension")
+  
+  names(data)<-tolower(names(data))
+  
+  if (length(pk)>0) {
+    if (class(pk) %in% c("integer","numeric")) pk=paste(names(data)[pk],collapse=",")
+  }
+  
+  datatypes<-getSqlTypeInfo("PostgreSQL")
+  datatypes["numeric"]<-"numeric"
+  
+  csvfilename=gsub("\\\\","\\\\\\\\",csvfilename)
+  
+  text=""
+  text=paste(text,"CREATE TABLE ",table," (",sep="")
+  columnnames<-names(data)
+  
+  #################################################################################
+  
+  if (length(pk)>0) {
+    for (n in columnnames) {
+      if (length(grep(n, datecol))>0) {
+        text=paste(text,"\"",n,"\" date,\n",sep="")
+      } else {
+        #print(class(data[[n]]))
+        if (is.null(class(data[[n]]))) cat("Missing datatype:",class(data[[n]]),"\n")
+        text=paste(text,"\"",n,"\" ",datatypes[[class(data[[n]])]],",\n",sep="")
+      }
+    }
+    text=paste(text,"CONSTRAINT \"",table,"_pkey\" PRIMARY KEY (",pk,")\n",sep="")
+  }
+  
+  if (length(pk)==0) {
+    for (n in columnnames[1:(length(columnnames)-1)]) {
+      if (length(grep(n, datecol))>0) {
+        text=paste(text,"\"",n,"\" date,\n",sep="")
+      } else {
+        #print(class(data[[n]]))
+        if (is.null(class(data[[n]]))) cat("Missing datatype:",class(data[[n]]),"\n")
+        text=paste(text,"\"",n,"\" ",datatypes[[class(data[[n]])]],",\n",sep="")
+      }
+    }
+    
+    n=columnnames[length(columnnames)]
+    text=paste(text,"\"",n,"\" ",datatypes[[class(data[[n]])]],sep="")
+    #\"
+  }
+  
+  ###############################################################################
+  if (withoids) text=paste(text,") WITH (OIDS=TRUE);\n",sep="")
+  else text=paste(text,") WITH (OIDS=FALSE);\n",sep="")
+  text=paste(text,"ALTER TABLE ",table," OWNER TO ",pguser,";\n",sep="")
+  
+  
+  
+  
+  if (source_file=="STDIN") {
+    if (header) text=paste(text,"COPY ",table," FROM ",source_file," CSV HEADER;\n",sep="")
+    else text=paste(text,"COPY ",table," FROM ",source_file," CSV;\n",sep="")
+    
+    sink("sqlquery.txt")
+    cat(text)
+    sink()
+    
+    
+    
+    if (printcopy){
+      
+      cat(paste('ok the CREATE TABLE and COPY statements have been constructed for this file and is in "sqlquery.txt", have a look and see if it is correct\nif it is ok and you have not set your password to be remembered in pgAdmin then paste this into a cmd prompt\n\n type sqlquery.txt \"',csvfilename,'\" | \"',pgpath,'\" -h ',ip,' -U ',pguser,' -d ',db,'\n\n\notherwise you can run this directly from R\n\n system(\"type sqlquery.txt \\"',csvfilename,'\\" | \"',pgpath,'\" -h ',ip,' -U ',pguser,' -d ',db,'\")',sep=''),'\n')
+      
+      cat(paste("\n\nnow you probably should vaccuum the table\nVACUUM ANALYZE ",table,";\n",sep=""))
+    } else {
+      sink('go.bat')
+      cat(paste('type sqlquery.txt \"',csvfilename,'\" | \"',pgpath,'\" -h ',ip,' -U ',pguser,' -d ',db,'',sep=''))
+      sink()
+      shell('go.bat')
+      file.remove('go.bat')
+    }
+    
+    
+  }
+  
+}
+
+#+end_src
+
 ** sql_subset
 *** test-sql_subset.r
 #+name:test-sql_subset.r
@@ -240,83 +398,232 @@ sql <- sql_subset(conn=ch, x='spatial_ref_sys',
     
 #+end_src
 
+
 ** add_stdydscr
 *** test-add_stdydscr
 #+name:test-add_stdydscr
 #+begin_src R :session *R* :tangle tests/test-add_stdydscr.r :exports none :eval no
-################################################################
-# name:test-add_stdydscr
+  ################################################################
+  # name:test-add_stdydscr
   source("R/connect2oracle.r")
   source("R/add_stdydscr.r")
-  source("R/sql_subset_into.r")
-  source("R/pgListTables.r")
+  source("R/getPassword.r")
   
-  ch <- connect2postgres('115.146.84.135', db='ewedb', user='gislibrary', p='gislibrary')
-  sql_subset_into(ch, 'dbsize',into_table='temp101', select = '*', eval=T)
-
+  pwd <- getPassword(remote=T)
+  ch <- connect2oracle('115.146.93.225', db="DDIINDEXDB", p = pwd)
+  
+  stdy <- add_stdydscr(idno='TESTSTUDY', 'A TEST OF THE DDI FUNCTION',
+                       ask = T)
+  t(stdy)
+  
+  
 #+end_src
 
 *** R-add_stdydscr
 #+name:add_stdydscr
 #+begin_src R :session *R* :tangle R/add_stdydscr.r :exports none :eval no
-################################################################
-# name:add_stdydscr
+  t################################################################
+  # name:add_stdydscr
+  
+  add_stdydscr <- function(idno=NA,titl=NA,abstract=NA,authoring_entity_of_data=NA,
+  distrbtr='NCEPH data manager',bibliographic_citation=NA,notes='NCEPH Unrestricted', restrctn=NA,datakind='OTHER',ask=F){
+  if (!require(sqldf)) install.packages('sqldf')
+  require(sqldf)
+  if (!require(R2HTML)) install.packages('R2HTML')
+  require(R2HTML)
+    
+    elements = c('TITL','IDNO','PRODUCER','PRODDATEDOC','BIBLCITDOC','AUTHENTY','COPYRIGHT','PRODDATESTDY','FUNDAG','DISTRBTR','SERNAME','VERSION','BIBLCITSTDY','TIMEPRD','COLLDATE','GEOGCOVER','GEOGUNIT','ANLYUNIT','UNIVERSE','DATAKIND','CLEANOPS','CONFDEC','SPECPERM','RESTRCTN','NOTES','ABSTRACT')
+    
+    stdydscr=as.data.frame(matrix(nrow=1,ncol=length(elements), byrow=TRUE))
+    names(stdydscr)=elements
+    if(is.na(titl)) {titl<- readline('title of study: ')}
+    stdydscr$TITL =titl
+    if(is.na(idno)) {idno<- readline('ID code of study: ')}
+    stdydscr$IDNO =idno
+    if(is.na(abstract)) {abstract<- readline('abstract: ')}
+    stdydscr$ABSTRACT =abstract
+    if(is.na(authoring_entity_of_data)) {authoring_entity_of_data<- readline('authoring_entity_of_data: ')}
+    stdydscr$AUTHENTY =authoring_entity_of_data
+    # auto
+    stdydscr$PRODDATEDOC =Sys.Date()
+    
+    if(ask==F){
+      stdydscr$PRODUCER =''
+      
+      stdydscr$BIBLCITDOC =''
+      stdydscr$COPYRIGHT =''
+      stdydscr$PRODDATESTDY =''
+      stdydscr$FUNDAG =''
+      stdydscr$DISTRBTR = distrbtr
+      stdydscr$SERNAME =''
+      stdydscr$VERSION =''
+      stdydscr$BIBLCITSTDY =bibliographic_citation
+      stdydscr$TIMEPRD =''
+      stdydscr$COLLDATE =''
+      stdydscr$GEOGCOVER =''
+      stdydscr$GEOGUNIT =''
+      stdydscr$ANLYUNIT =''
+      stdydscr$UNIVERSE =''
+      stdydscr$DATAKIND =datakind
+      stdydscr$CLEANOPS =''
+      stdydscr$CONFDEC =''
+      stdydscr$SPECPERM =''
+      stdydscr$RESTRCTN =restrctn
+      stdydscr$NOTES =notes
+      
+    } else {
+      for(i in c(7:(length(elements)-1))){
+        element=elements[i]
+        stdydscr[1,i]=readline(paste("enter descriptions for the ",element,": "))
+      }
+    }
+    stdydscr$PRODDATESTDY <- format(as.Date( substr(stdydscr$PRODDATESTDY,1,10),'%Y-%m-%d'),"%d/%b/%Y")
+    stdydscr$PRODDATEDOC <- format(as.Date( substr(stdydscr$PRODDATEDOC,1,10),'%Y-%m-%d'),"%d/%b/%Y")
 
-add_stdydscr <- function(idno=NA,titl=NA,abstract=NA,authoring_entity_of_data=NA,
-distrbtr='NCEPH data manager',bibliographic_citation=NA,notes='NCEPH Unrestricted', restrctn=NA,datakind='OTHER',ask=F){
-if (!require(sqldf)) install.packages('sqldf')
-require(sqldf)
-if (!require(R2HTML)) install.packages('R2HTML')
-require(R2HTML)
+
+
+    # TASK add a caveat that if NOTES is null then NCEPH Unrestricted
+    return(stdydscr)
+  }
   
-  elements = c('TITL','IDNO','PRODUCER','PRODDATEDOC','BIBLCITDOC','AUTHENTY','COPYRIGHT','PRODDATESTDY','FUNDAG','DISTRBTR','SERNAME','VERSION','BIBLCITSTDY','TIMEPRD','COLLDATE','GEOGCOVER','GEOGUNIT','ANLYUNIT','UNIVERSE','DATAKIND','CLEANOPS','CONFDEC','SPECPERM','RESTRCTN','NOTES','ABSTRACT')
   
-  stdydscr=as.data.frame(matrix(nrow=1,ncol=length(elements), byrow=TRUE))
-  names(stdydscr)=elements
-  if(is.na(titl)) {titl<- readline('title of study: ')}
-  stdydscr$TITL =titl
-  if(is.na(idno)) {idno<- readline('ID code of study: ')}
-  stdydscr$IDNO =idno
-  if(is.na(abstract)) {abstract<- readline('abstract: ')}
-  stdydscr$ABSTRACT =abstract
-  if(is.na(authoring_entity_of_data)) {authoring_entity_of_data<- readline('authoring_entity_of_data: ')}
-  stdydscr$AUTHENTY =authoring_entity_of_data
-  # auto
-  stdydscr$PRODDATEDOC =Sys.Date()
+#+end_src
+** add_filedscr
+*** test-add_filedscr
+#+name:test-add_stdydscr
+#+begin_src R :session *R* :tangle tests/test-add_filedscr.r :exports none :eval no
+  ################################################################
+  # name:test-add_stdydscr
+  
+  source("R/add_filedscr.r")
+   
+  file <- add_filedscr(fileid = 1, idno = 'TESTSTUDY', ask=T)
+  
+  t(file)
+  
+  
+#+end_src
+*** R-add_filedscr
+#+name:add_filedscr
+#+begin_src R :session *R* :tangle R/add_filedscr.r :exports none :eval no
+################################################################
+# name:add_filedscr
+add_filedscr <- function(fileid=NA,idno=NA,filename=NA,notes='NCEPH_Unrestricted',filelocation=NA,file_description='',ask=F){
+  if (!require(sqldf)) install.packages('sqldf')
+  require(sqldf)
+  if (!require(R2HTML)) install.packages('R2HTML')
+  require(R2HTML)
+    
+  elements = c('IDNO','FILENAME','FILETYPE','PROCSTAT','SPECPERMFILE','DATEARCHIVED','DATEDESTROY','FILEDSCR','NOTES','REQID','PUBLISHDDI','BACKUPVALID','DATEBACKUPVALID','CHECKED','BACKUPLOCATION')
+  filedscr=as.data.frame(matrix(nrow=1,ncol=length(elements), byrow=TRUE))
+  names(filedscr)=elements
+  stopifnot(!is.na(idno)) 
+  filedscr$IDNO =idno
+  if(is.na(fileid)) {fileid<- readline('fileid, one number for each file in the study: ')}
+  filedscr$FILEID =fileid
+  if(is.na(filename)) {filename<- readline('filename: ')}
+  filedscr$FILENAME =filename
+  if(is.na(notes)) {notes<- readline('notes: ')}
+  filedscr$NOTES =notes
+  if(is.na(filelocation)) {filelocation <- getwd()}
+  filedscr$FILELOCATION =filelocation
+  if(is.na(file_description)) {file_description<- readline('file_description: ')}
+  filedscr$FILEDSCR=file_description
   
   if(ask==F){
-    stdydscr$PRODUCER =''
-    
-    stdydscr$BIBLCITDOC =''
-    stdydscr$COPYRIGHT =''
-    stdydscr$PRODDATESTDY =''
-    stdydscr$FUNDAG =''
-    stdydscr$DISTRBTR = distrbtr
-    stdydscr$SERNAME =''
-    stdydscr$VERSION =''
-    stdydscr$BIBLCITSTDY =bibliographic_citation
-    stdydscr$TIMEPRD =''
-    stdydscr$COLLDATE =''
-    stdydscr$GEOGCOVER =''
-    stdydscr$GEOGUNIT =''
-    stdydscr$ANLYUNIT =''
-    stdydscr$UNIVERSE =''
-    stdydscr$DATAKIND =datakind
-    stdydscr$CLEANOPS =''
-    stdydscr$CONFDEC =''
-    stdydscr$SPECPERM =''
-    stdydscr$RESTRCTN =restrctn
-    stdydscr$NOTES =notes
-    
+    filedscr$FILETYPE =''
+    filedscr$PROCSTAT =''
+    filedscr$SPECPERMFILE =''
+    filedscr$DATEARCHIVED =''
+    filedscr$DATEDESTROY =''
+    filedscr$REQID =''
+    filedscr$PUBLISHDDI =''
+    filedscr$BACKUPVALID =''
+    filedscr$DATEBACKUPVALID =''
+    filedscr$CHECKED =''
+    filedscr$BACKUPLOCATION =''
   } else {
-    for(i in c(7:(length(elements)-1))){
+    for(i in 3:length(elements)){
       element=elements[i]
-      stdydscr[1,i]=readline(paste("enter descriptions for the ",element,": "))
+      filedscr[1,i]=readline(paste("enter descriptions for the ",element,": "))
     }
   }
-  # TASK add a caveat that if NOTES is null then NCEPH Unrestricted
-  return(stdydscr)
+  
+  return(filedscr)
 }
 
+#+end_src
 
+** load2ddiindex
+*** test-load2ddiindex
+#+name:test-load2ddiindex
+#+begin_src R :session *R* :tangle tests/test-load2ddiindex.r :exports none :eval no
+  ################################################################
+  # name:test-load2ddiindex
+  source("R/connect2oracle.r")
+  source("R/add_stdydscr.r")
+  source("R/getPassword.r")
+  source("R/load2ddiindex.r")
+  
+  pwd <- getPassword(remote=T)
+  ch <- connect2oracle('115.146.93.225', db="DDIINDEXDB", p = pwd)
+  if(!exists('stdy'))
+  {
+    stdy <- add_stdydscr(ask = T)
+  }
+  t(stdy)
+  
+  load2ddiindex_study(conn = ch, stdy)
+  load2ddiindex_file(conn = ch, file)
+  
+#+end_src
+
+*** R-load2ddiindex
+#+name:load2ddiindex
+#+begin_src R :session *R* :tangle R/load2ddiindex.r :exports none :eval no
+  ################################################################
+  # name:load2ddiindex
+  load2ddiindex_study <- function(conn=NA, stdydscr)
+  {
+  
+    if(exists('stdydscr'))
+      {
+        stdyexists <- dbGetQuery(conn,
+                  paste("select * from stdydscr where idno = '",stdydscr$IDNO,"'", sep="")
+                  )
+      if(nrow(stdyexists) > 0) stop('Study record already exists.')
+      
+  
+    dbSendUpdate(conn,
+    #   cat(
+      paste('
+      insert into STDYDSCR (',paste(names(stdydscr), sep = '', collapse = ', '),')
+      VALUES (',paste("'",paste(gsub("'","",ifelse(is.na(stdydscr),'',stdydscr)),sep='',collapse="', '"),"'",sep=''),')',sep='')
+      )
+    }
+  }
+  
+  
+  load2ddiindex_file <- function(conn=NA, filedscr)
+  {
+  
+  
+  
+    if(exists('filedscr'))
+      {
+      fileexists <- dbGetQuery(conn,
+                  paste("select * from filedscr where filename = '",filedscr$FILENAME,"' and filelocation ='",filedscr$FILELOCATION,"'", sep="")
+                  )
+      if(nrow(fileexists) > 0) stop('File record already exists.')
+      
+    dbSendUpdate(ch,
+    # cat(
+      paste('
+      insert into FILEDSCR (',paste(names(filedscr), sep = '', collapse = ', '),')
+      VALUES (',paste("'",paste(gsub("'","",ifelse(is.na(filedscr),'',filedscr)),sep='',collapse="', '"),"'",sep=''),')',sep='')
+    )
+  
+      }
+  }
+  
 #+end_src
