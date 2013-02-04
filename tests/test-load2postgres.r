@@ -17,8 +17,8 @@ if(!exists('p'))
 {
   p <- getPassword()
 }
-ch <- connect2postgres('115.146.84.135', db='ewedb',
+ewedb <- connect2postgres('115.146.84.135', db='ewedb',
                        user='gislibrary', p=p)
-dbSendQuery(ch, 'drop table airquality')
+dbSendQuery(ewedb, 'drop table airquality')
 load2postgres('airquality.csv','public', 'airquality', pguser =
               'gislibrary', ip = '115.146.84.135', db='ewedb', print = F)

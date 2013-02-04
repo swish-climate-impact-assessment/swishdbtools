@@ -30,9 +30,9 @@
   {
     p <- getPassword()
   }
-  ch <- connect2postgres('115.146.84.135', db='ewedb',
+  ewedb <- connect2postgres('115.146.84.135', db='ewedb',
                          user='gislibrary', p=p)
-  dbSendQuery(ch, 'drop table airquality')
+  dbSendQuery(ewedb, 'drop table airquality')
   load2postgres('airquality.csv','public', 'airquality', pguser =
                 'gislibrary', ip = '115.146.84.135', db='ewedb', print = F)
   
@@ -587,6 +587,87 @@ add_filedscr <- function(fileid=NA,idno=NA,filename=NA,notes='NCEPH_Unrestricted
   
   return(filedscr)
 }
+
+#+end_src
+
+** add_datadscr
+*** test-add_datadscr
+#+name:test-add_datadscr
+#+begin_src R :session *R* :tangle tests/test-add_datadscr.r :exports none :eval no
+  ################################################################
+  # name:test-add_datadscr
+    source("R/add_datadscr.r")
+    require(swishdbtools)
+    if(!exists('p'))
+    {
+      p <- getPassword()
+    }
+    ewedb <- connect2postgres('localhost', db='django',
+                           user='gislibrary', p=p)
+    pwd <- getPassword(remote=T)
+    ch <- connect2oracle('115.146.93.225', db="DDIINDEXDB", p = pwd)
+  
+    airquality <- sql_subset(ewedb, 'airquality', limit = 1, eval = T)
+    airquality
+    fid <- dbGetQuery(ch,
+    #                  cat(
+                      paste("select FILEID
+                      from filedscr
+                      where filelocation = '",f$FILELOCATION,"'
+                      and filename = '",f$FILENAME,"'",
+                      sep=''))
+    datadscr <- add_datadscr(data_frame = airquality, fileid = 1, ask=T)
+  
+  
+    for(i in 1:nrow(d)){
+    dbSendUpdate(ch,
+    #i = 1
+    # cat(
+    paste('
+    insert into DATADSCR (',paste(names(d), sep = '', collapse = ', '),')
+    VALUES (',paste("'",paste(gsub("'","",ifelse(is.na(d[i,]),'',d[i,])),sep='',collapse="', '"),"'",sep=''),')',sep='')
+    )
+    }
+  
+#+end_src
+
+*** R-add_datadscr
+#+name:add_datadscr
+#+begin_src R :session *R* :tangle R/add_datadscr.r :exports none :eval no
+################################################################
+# name:add_datadscr
+add_datadscr <- function(data_frame, fileid = NA,notes=NA,specperm=F,ask=F){
+
+
+  labls=names(data_frame)
+  datadscr=as.data.frame(matrix(nrow=length(labls),ncol=4, byrow=TRUE))
+  names(datadscr)=c('LABL','NOTES','SPECPERMVAR', 'FILEID')
+  datadscr$LABL=labls
+  if( !is.na(notes) ){ stopifnot(length(notes) == length(labls))}
+  
+  if(!is.na(notes[1])) {
+    datadscr$NOTES=notes
+  } else if(ask==F){
+    datadscr$NOTES=rep('',length(labls))
+  } else {
+    for(i in 1:length(labls) ){
+      #if element is null then
+      labl=labls[i]
+      datadscr[i,1]=labl
+      datadscr[i,2]=readline(paste("enter descriptions for the ",labl,": "))
+      if(specperm==T) datadscr[i,3]=readline(paste("special permissions for ",labl,": "))
+    }
+  }
+  datadscr$FILEID=fileid
+  # cat(paste("write.table(f,'metadata/{study}_ddi_filedscr.csv',sep=',',row.names=F)
+  #           # OR
+  #           write.table(f,'metadata/{study}_ddi_filedscr.csv',sep=',',row.names=F, append=T, col.names=F)
+  #           ",sep=''))
+
+  return(datadscr)
+  
+}
+
 
 #+end_src
 
