@@ -11,8 +11,11 @@ require(swishdbtools)
 # dev tests
 source("R/sql_subset.r")
 source("R/pgListTables.r")
-
- ch <- connect2postgres('115.146.84.135', db='ewedb', user='gislibrary', p='gislibrary')
+if(!exists('p'))
+{
+  p <- getPassword()
+}
+ ch <- connect2postgres('115.146.84.135', db='ewedb', user='gislibrary', p=p)
  sql <- sql_subset(conn=ch, x='spatial_ref_sys',
                    subset = "srid = 4283", select='srid, srtext',
                    limit = 2, eval = T)
