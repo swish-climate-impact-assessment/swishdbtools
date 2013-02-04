@@ -125,12 +125,35 @@ load2postgres <- function(inputfilepath,schema,tablename,pk=NULL,header=TRUE,pri
     
     
     
-    if (printcopy){
+ 
+    if(length(grep('linux',sessionInfo()[[1]]$os)) == 1)
+     {
+      os <- 'linux'
+     } else {
+      os <- 'windows'
+     }
+    if (printcopy & os == 'linux')
+    {
+      cat(paste('ok the CREATE TABLE and COPY statements have been constructed for this file and is in "sqlquery.txt", have a look and see if it is correct\nif it is ok and you have not set your password to be remembered in pgpass then paste this into a cmd prompt\n\n cat sqlquery.txt \"',csvfilename,'\" | \"',pgpath,'\" -h ',ip,' -U ',pguser,' -d ',db,'\n\n\notherwise you can run this directly from R\n\n system(\"cat sqlquery.txt \\"',csvfilename,'\\" | \"',pgpath,'\" -h ',ip,' -U ',pguser,' -d ',db,'\")',sep=''),'\n')
       
+      cat(paste("\n\nnow you probably should vaccuum the table\nVACUUM ANALYZE ",table,";\n",sep=""))
+    } 
+    if (!printcopy & os == 'linux')
+    {
+     
+      system(paste('cat sqlquery.txt \"',csvfilename,'\" | psql -h ',ip,' -U ',pguser,' -d ',db,'',sep=''))
+          
+    }
+    
+
+    if (printcopy & os == 'windows')
+    {
       cat(paste('ok the CREATE TABLE and COPY statements have been constructed for this file and is in "sqlquery.txt", have a look and see if it is correct\nif it is ok and you have not set your password to be remembered in pgAdmin then paste this into a cmd prompt\n\n type sqlquery.txt \"',csvfilename,'\" | \"',pgpath,'\" -h ',ip,' -U ',pguser,' -d ',db,'\n\n\notherwise you can run this directly from R\n\n system(\"type sqlquery.txt \\"',csvfilename,'\\" | \"',pgpath,'\" -h ',ip,' -U ',pguser,' -d ',db,'\")',sep=''),'\n')
       
       cat(paste("\n\nnow you probably should vaccuum the table\nVACUUM ANALYZE ",table,";\n",sep=""))
-    } else {
+    } 
+    if (!printcopy & os == 'windows')
+    {
       sink('go.bat')
       cat(paste('type sqlquery.txt \"',csvfilename,'\" | \"',pgpath,'\" -h ',ip,' -U ',pguser,' -d ',db,'',sep=''))
       sink()

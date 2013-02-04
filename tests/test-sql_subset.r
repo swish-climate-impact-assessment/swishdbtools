@@ -21,17 +21,9 @@ if(!exists('p'))
                    limit = 2, eval = T)
 ## cat(sql) # if eval=F
  nrow(sql)==1 # if eval=T
-#### from subset man page ####
-# head(subset(airquality, Temp > 80, select = c(Ozone, Temp)))
-# str(airquality)
-# tempdata <- airquality
-# names(tempdata) <- tolower(names(tempdata))
-# names(tempdata) <- gsub('\\.', '_',names(tempdata))
-# str(tempdata)
-# dbWriteTable(ch, 'airquality', tempdata)
-# rm(tempdata)
 source("R/sql_subset.r")
-#sql_subset(ch, 'airquality', 'Temp > 80', 'Ozone, Temp', eval = T)
+#sql_subset(ch, 'airquality', 'Temp > 80', 'Ozone, Temp', eval = T,
+#           limit = 6)
 sql_subset(ch, 'dbsize', select = '*', into_table = 'temp101', eval=T)
 dbSendQuery(ch, 'drop table temp101')
 sql_subset(ch, 'dbsize', select = '*', eval=T)
