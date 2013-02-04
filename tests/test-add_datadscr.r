@@ -14,22 +14,23 @@
 
   airquality <- sql_subset(ewedb, 'airquality', limit = 1, eval = T)
   airquality
+  file <- dbGetQuery(ch, "select * from filedscr where idno = 'R_DATASETS'")
   fid <- dbGetQuery(ch,
   #                  cat(
                     paste("select FILEID
                     from filedscr
-                    where filelocation = '",f$FILELOCATION,"'
-                    and filename = '",f$FILENAME,"'",
+                    where filelocation = '",file$FILELOCATION,"'
+                    and filename = '",file$FILENAME,"'",
                     sep=''))
-  datadscr <- add_datadscr(data_frame = airquality, fileid = 1, ask=T)
+  datadscr <- add_datadscr(data_frame = airquality, fileid = fid[1,1], ask=T)
 
 
-  for(i in 1:nrow(d)){
+  for(i in 1:nrow(datadscr)){
   dbSendUpdate(ch,
   #i = 1
   # cat(
   paste('
-  insert into DATADSCR (',paste(names(d), sep = '', collapse = ', '),')
-  VALUES (',paste("'",paste(gsub("'","",ifelse(is.na(d[i,]),'',d[i,])),sep='',collapse="', '"),"'",sep=''),')',sep='')
+  insert into DATADSCR (',paste(names(datadscr), sep = '', collapse = ', '),')
+  VALUES (',paste("'",paste(gsub("'","",ifelse(is.na(datadscr[i,]),'',datadscr[i,])),sep='',collapse="', '"),"'",sep=''),')',sep='')
   )
   }

@@ -18,12 +18,14 @@ add_filedscr <- function(fileid=NA,idno=NA,filename=NA,notes='NCEPH_Unrestricted
   filedscr$FILENAME =filename
   if(is.na(notes)) {notes<- readline('notes: ')}
   filedscr$NOTES =notes
-  if(is.na(filelocation)) {filelocation <- getwd()}
+#  if(is.na(filelocation)) {filelocation <- getwd()}
+  if(is.na(filelocation)) {filelocation <- readline('file_location: ')}
   filedscr$FILELOCATION =filelocation
   if(is.na(file_description)) {file_description<- readline('file_description: ')}
   filedscr$FILEDSCR=file_description
   
   if(ask==F){
+    filedscr$FILELOCATION = getwd()
     filedscr$FILETYPE =''
     filedscr$PROCSTAT =''
     filedscr$SPECPERMFILE =''
