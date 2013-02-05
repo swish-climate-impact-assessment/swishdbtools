@@ -14,9 +14,16 @@ stdydscr <- dbGetQuery(ch,
                    "select * from stdydscr where idno = 'R_DATASETS'")
 file <- dbGetQuery(ch,
                    "select * from filedscr where idno = 'R_DATASETS'")
-datadscr <- dbGetQuery(ch,
-                   paste("select * from datadscr where fileid = '",file$FILEID,"'",
-                   sep = "")
-                       )
+file
+for(fid in file$FILEID)
+  {
+#    fid = file$FILEID[1]
+    datadscr <- dbGetQuery(ch,
+                          paste("select * from datadscr where fileid = '",fid,"'",
+                          sep = "")
+                          )
 
-make_ddixml(s = stdydscr, f=file, d=datadscr, writeXML= T)
+#datadscr
+    file_i <- file[file$FILEID==fid,]
+  make_ddixml(s = stdydscr, f=file_i, d=datadscr, writeXML= T)
+  }

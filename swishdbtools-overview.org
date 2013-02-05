@@ -956,13 +956,15 @@ sql <- sql_subset(conn=ch, x='spatial_ref_sys',
   file
   for(fid in file$FILEID)
     {
+  #    fid = file$FILEID[1]
       datadscr <- dbGetQuery(ch,
                             paste("select * from datadscr where fileid = '",fid,"'",
                             sep = "")
                             )
   
   #datadscr
-    make_ddixml(s = stdydscr, f=file[file$FILEID==fid,], d=datadscr, writeXML= T)
+      file_i <- file[file$FILEID==fid,]
+    make_ddixml(s = stdydscr, f=file_i, d=datadscr, writeXML= T)
     }
   
 #+end_src
