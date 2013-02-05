@@ -1,17 +1,20 @@
 
 ################################################################
 # name:load2ddiindex_data
+require(swishdbtools)
+#idno <- "R_DATASETS"
+filename <- "baseball"
+filelocation <- "public"
+p <- getPassword()
+ch <- connect2oracle('115.146.93.225', db='DDIINDEXDB', p=p)
+sql <- sql_subset(ch, 'ddiindexdb.filedscr',
+                   subset = paste("filelocation = '",filelocation,"'
+                            and filename = '",filename,"'", sep =""),
+                    eval=F, check =F)
+cat(sql)
+file <- dbGetQuery(ch, sql)
+fid <- file$FILEID
 
-    file <- dbGetQuery(ch, "select * from filedscr where idno = 'R_DATASETS'")  
-    fid <- dbGetQuery(ch,
-    #                  cat(
-                      paste("select FILEID
-                      from filedscr
-                      where filelocation = '",file$FILELOCATION,"'
-                      and filename = '",file$FILENAME,"'",
-                      sep=''))
-
-  
     for(i in 1:nrow(datadscr)){
     dbSendUpdate(ch,
     #i = 1

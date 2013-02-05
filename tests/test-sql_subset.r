@@ -15,15 +15,15 @@ if(!exists('p'))
 {
   p <- getPassword()
 }
- ch <- connect2postgres('115.146.84.135', db='ewedb', user='gislibrary', p=p)
- sql <- sql_subset(conn=ch, x='spatial_ref_sys',
+ ewedb <- connect2postgres('115.146.84.135', db='ewedb', user='gislibrary', p=p)
+ sql <- sql_subset(conn=ewedb, x='public.spatial_ref_sys',
                    subset = "srid = 4283", select='srid, srtext',
-                   limit = 2, eval = T)
+                   limit = 2, eval = T, check = T)
 ## cat(sql) # if eval=F
  nrow(sql)==1 # if eval=T
-source("R/sql_subset.r")
-#sql_subset(ch, 'airquality', 'Temp > 80', 'Ozone, Temp', eval = T,
+
+#sql_subset(ewedb, 'airquality', 'Temp > 80', 'Ozone, Temp', eval = T,
 #           limit = 6)
-sql_subset(ch, 'dbsize', select = '*', into_table = 'temp101', eval=T)
-dbSendQuery(ch, 'drop table temp101')
-sql_subset(ch, 'dbsize', select = '*', eval=T)
+sql_subset(ewedb, 'dbsize', select = '*', eval=T)
+dbSendQuery(ewedb, 'drop table temp101')
+sql_subset(ewedb, 'dbsize', select = '*', eval=T)
