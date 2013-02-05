@@ -8,9 +8,9 @@
   
   pwd <- getPassword(remote=T)
   ch <- connect2oracle('115.146.93.225', db="DDIINDEXDB", p = pwd)
-  if(!exists('stdy'))
+  if(!exists('file'))
   {
-    stdy <- add_filedscr(ask = T)
+    file <- add_filedscr(ask = T)
   }
 
   load2ddiindex_file(conn = ch, file)

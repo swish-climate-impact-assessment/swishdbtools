@@ -707,9 +707,9 @@ sql <- sql_subset(conn=ch, x='spatial_ref_sys',
     
     pwd <- getPassword(remote=T)
     ch <- connect2oracle('115.146.93.225', db="DDIINDEXDB", p = pwd)
-    if(!exists('stdy'))
+    if(!exists('file'))
     {
-      stdy <- add_filedscr(ask = T)
+      file <- add_filedscr(ask = T)
     }
   
     load2ddiindex_file(conn = ch, file)
@@ -761,23 +761,25 @@ sql <- sql_subset(conn=ch, x='spatial_ref_sys',
 #+begin_src R :session *R* :tangle tests/test-add_datadscr.r :exports none :eval no
   ################################################################
   # name:test-add_datadscr
-    source("R/add_datadscr.r")
-    require(swishdbtools)
-    if(!exists('p'))
-    {
-      p <- getPassword()
-    }
-    ewedb <- connect2postgres('localhost', db='django',
-                           user='gislibrary', p=p)
-    pwd <- getPassword(remote=T)
-    ch <- connect2oracle('115.146.93.225', db="DDIINDEXDB", p = pwd)
-    # for files that are already loaded on ewedb
-    airquality <- sql_subset(ewedb, 'airquality', limit = 1, eval = T)
-    airquality
-    # else load the file from CSV or similar
-    datadscr <- add_datadscr(data_frame = airquality, fileid = 1, ask=T)
-
-
+  source("R/add_datadscr.r")
+  require(swishdbtools)
+  if(!exists('p'))
+  {
+    p <- getPassword()
+  }
+  ewedb <- connect2postgres('localhost', db='django',
+                         user='gislibrary', p=p)
+  pwd <- getPassword(remote=T)
+  ch <- connect2oracle('115.146.93.225', db="DDIINDEXDB", p = pwd)
+  # for files that are already loaded on ewedb
+  airquality <- sql_subset(ewedb, 'airquality', limit = 1, eval = T)
+  airquality
+  # else load the file from CSV or similar
+  baseball <- read.csv('baseball.csv')
+  # now add variable labels
+  datadscr <- add_datadscr(data_frame = airquality, fileid = 1, ask=T)
+  datadscr <- add_datadscr(data_frame = baseball, ask=T)
+  
 #+end_src
 
 *** R-add_datadscr
@@ -826,36 +828,48 @@ sql <- sql_subset(conn=ch, x='spatial_ref_sys',
 #+begin_src R :session *R* :tangle tests/test-load2ddiindex_data.r :exports none :eval no
   ################################################################
   # name:load2ddiindex_data
-  source('R/sql_subset.r')
+  source('R/load2ddiindex_data.r')
+  require(swishdbtools)
+  
+  p <- getPassword()
+  ch <- connect2oracle('115.146.93.225', db='DDIINDEXDB', p=p)
+  load2ddiindex_data(ch, filepath = "public.baseball", datadscr)
 #+end_src
 *** R-load2ddiindex_data
 #+name:load2ddiindex_data
 #+begin_src R :session *R* :tangle R/load2ddiindex_data.r :exports none :eval no
   ################################################################
   # name:load2ddiindex_data
-  require(swishdbtools)
-  #idno <- "R_DATASETS"
-  filename <- "baseball"
-  filelocation <- "public"
-  p <- getPassword()
-  ch <- connect2oracle('115.146.93.225', db='DDIINDEXDB', p=p)
+  
+  load2ddiindex_data <- function(conn, filepath, datadscr)
+   {
+     if(length(grep("\\.",filepath)) == 0)
+      {
+        schema <- "public"
+        table <- filepath
+      } else {
+        schema <- strsplit(filepath, "\\.")[[1]][1]
+        table <- strsplit(filepath, "\\.")[[1]][2]
+      }
+
   sql <- sql_subset(ch, 'ddiindexdb.filedscr',
-                     subset = paste("filelocation = '",filelocation,"'
-                              and filename = '",filename,"'", sep =""),
-                      eval=F, check =F)
-  cat(sql)
+                    subset = paste("filelocation = '",schema,"' and filename = '",table,"'", sep =""),
+                    eval=F, check =F)
+  #cat(sql)
   file <- dbGetQuery(ch, sql)
   fid <- file$FILEID
-  
-      for(i in 1:nrow(datadscr)){
-      dbSendUpdate(ch,
-      #i = 1
-      # cat(
+  #fid
+  datadscr$FILEID <- fid
+  for(i in 1:nrow(datadscr))
+    {
+    dbSendUpdate(ch,
       paste('
       insert into DATADSCR (',paste(names(datadscr), sep = '', collapse = ', '),')
       VALUES (',paste("'",paste(gsub("'","",ifelse(is.na(datadscr[i,]),'',datadscr[i,])),sep='',collapse="', '"),"'",sep=''),')',sep='')
-      )
-      }
+     )
+  
+    }
+  }
   
 #+end_src
 *** man-load2ddiindex_data
@@ -863,6 +877,60 @@ sql <- sql_subset(conn=ch, x='spatial_ref_sys',
 #+begin_src R :session *R* :tangle man/load2ddiindex_data.Rd :exports none :eval no
 ################################################################
 # name:load2ddiindex_data
+
+#+end_src
+
+** ddiindexdb_remove_file
+*** test-ddiindexdb_remove_file
+#+name:ddiindexdb_remove_file
+#+begin_src R :session *R* :tangle tests/test-ddiindexdb_remove_file.r :exports none :eval no
+  ################################################################
+  # name:ddiindexdb_remove_file
+  require(swishdbtools)
+  source("R/ddiindexdb_remove_file.r")
+  p <- getPassword()
+  ddiindexdb <- connect2oracle('115.146.93.225', 'ddiindexdb', p = p)
+  ddiindexdb_remove_file(ddiindexdb, x = "public.baseball")
+  
+#+end_src
+*** R-ddiindexdb_remove_file
+#+name:ddiindexdb_remove_file
+#+begin_src R :session *R* :tangle R/ddiindexdb_remove_file.r :exports none :eval no
+    ################################################################
+    # name:ddiindexdb_remove_file
+  
+    ddiindexdb_remove_file <- function(conn, x)
+    {
+    if(length(grep("\\.",x)) == 0)
+      {
+        schema <- "public"
+        table <- x
+      } else {
+        schema <- strsplit(x, "\\.")[[1]][1]
+        table <- strsplit(x, "\\.")[[1]][2]
+      }
+  
+    fid <- dbGetQuery(ch,
+                paste("delete from ddiindexdb.filedscr where filelocation = '",schema,"'  and filename = '",table,"'", sep ="")
+                     )
+  #  fid
+  
+    dbSendUpdate(ch,
+                paste("delete from ddiindexdb.datadscr where fileid = ",
+                fid[1,1], sep ="")
+                )
+  
+    dbSendUpdate(ch,
+                paste("delete from ddiindexdb.filedscr where filelocation = '",schema,"'  and filename = '",table,"'", sep ="")
+                )
+    }
+  
+#+end_src
+*** man-ddiindexdb_remove_file
+#+name:ddiindexdb_remove_file
+#+begin_src R :session *R* :tangle man/ddiindexdb_remove_file.Rd :exports none :eval no
+################################################################
+# name:ddiindexdb_remove_file
 
 #+end_src
 
@@ -885,12 +953,17 @@ sql <- sql_subset(conn=ch, x='spatial_ref_sys',
                      "select * from stdydscr where idno = 'R_DATASETS'")
   file <- dbGetQuery(ch,
                      "select * from filedscr where idno = 'R_DATASETS'")
-  datadscr <- dbGetQuery(ch,
-                     paste("select * from datadscr where fileid = '",file$FILEID,"'",
-                     sep = "")
-                         )
+  file
+  for(fid in file$FILEID)
+    {
+      datadscr <- dbGetQuery(ch,
+                            paste("select * from datadscr where fileid = '",fid,"'",
+                            sep = "")
+                            )
   
-  make_ddixml(s = stdydscr, f=file, d=datadscr, writeXML= T)
+  #datadscr
+    make_ddixml(s = stdydscr, f=file[file$FILEID==fid,], d=datadscr, writeXML= T)
+    }
   
 #+end_src
 *** R-make_ddixml
