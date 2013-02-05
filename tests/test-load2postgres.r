@@ -22,3 +22,10 @@ ewedb <- connect2postgres('115.146.84.135', db='ewedb',
 dbSendQuery(ewedb, 'drop table airquality')
 load2postgres('airquality.csv','public', 'airquality', pguser =
               'gislibrary', ip = '115.146.84.135', db='ewedb', print = F)
+
+# from plyr
+require(plyr)
+head(baseball)
+write.csv(baseball, 'baseball.csv', row.names=F, na = "")
+load2postgres('baseball.csv','public', 'baseball', pguser =
+              'gislibrary', ip = '115.146.84.135', db='ewedb', print = F)

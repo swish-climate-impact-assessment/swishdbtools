@@ -11,26 +11,8 @@
                          user='gislibrary', p=p)
   pwd <- getPassword(remote=T)
   ch <- connect2oracle('115.146.93.225', db="DDIINDEXDB", p = pwd)
-
+  # for files that are already loaded on ewedb
   airquality <- sql_subset(ewedb, 'airquality', limit = 1, eval = T)
   airquality
-  file <- dbGetQuery(ch, "select * from filedscr where idno = 'R_DATASETS'")
-  fid <- dbGetQuery(ch,
-  #                  cat(
-                    paste("select FILEID
-                    from filedscr
-                    where filelocation = '",file$FILELOCATION,"'
-                    and filename = '",file$FILENAME,"'",
-                    sep=''))
-  datadscr <- add_datadscr(data_frame = airquality, fileid = fid[1,1], ask=T)
-
-
-  for(i in 1:nrow(datadscr)){
-  dbSendUpdate(ch,
-  #i = 1
-  # cat(
-  paste('
-  insert into DATADSCR (',paste(names(datadscr), sep = '', collapse = ', '),')
-  VALUES (',paste("'",paste(gsub("'","",ifelse(is.na(datadscr[i,]),'',datadscr[i,])),sep='',collapse="', '"),"'",sep=''),')',sep='')
-  )
-  }
+  # else load the file from CSV or similar
+  datadscr <- add_datadscr(data_frame = airquality, fileid = 1, ask=T)

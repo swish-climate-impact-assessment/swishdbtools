@@ -36,6 +36,13 @@
   load2postgres('airquality.csv','public', 'airquality', pguser =
                 'gislibrary', ip = '115.146.84.135', db='ewedb', print = F)
   
+  # from plyr
+  require(plyr)
+  head(baseball)
+  write.csv(baseball, 'baseball.csv', row.names=F, na = "")
+  load2postgres('baseball.csv','public', 'baseball', pguser =
+                'gislibrary', ip = '115.146.84.135', db='ewedb', print = F)
+  
 #+end_src
 
 *** R-load2postgres
@@ -434,6 +441,38 @@ sql <- sql_subset(conn=ch, x='spatial_ref_sys',
     
 #+end_src
 
+** sql_summarise
+*** test-sql_summarise
+#+name:sql_summarise
+#+begin_src R :session *R* :tangle tests/test-sql_summarise.r :exports none :eval no
+  ################################################################
+  # name:sql_summarise
+  require(plyr)
+  summarise(baseball,
+   duration = max(year) - min(year),
+   nteams = length(unique(team)))
+  head(baseball)
+  head(
+  ddply(baseball, "id", summarise,
+   duration = max(year) - min(year),
+   nteams = length(unique(team)))
+  )
+  
+#+end_src
+*** R-sql_summarise
+#+name:sql_summarise
+#+begin_src R :session *R* :tangle R/sql_summarise.r :exports none :eval no
+################################################################
+# name:sql_summarise
+
+#+end_src
+*** man-sql_summarise
+#+name:sql_summarise
+#+begin_src R :session *R* :tangle man/sql_summarise.Rd :exports none :eval no
+################################################################
+# name:sql_summarise
+
+#+end_src
 
 ** add_stdydscr
 *** test-add_stdydscr
@@ -593,16 +632,16 @@ sql <- sql_subset(conn=ch, x='spatial_ref_sys',
   
 #+end_src
 
-** load2ddiindex
-*** test-load2ddiindex
-#+name:test-load2ddiindex
-#+begin_src R :session *R* :tangle tests/test-load2ddiindex.r :exports none :eval no
+** load2ddiindex_study
+*** test-load2ddiindex_study
+#+name:test-load2ddiindex_study
+#+begin_src R :session *R* :tangle tests/test-load2ddiindex_study.r :exports none :eval no
   ################################################################
-  # name:test-load2ddiindex
+  # name:test-load2ddiindex_study
   source("R/connect2oracle.r")
   source("R/add_stdydscr.r")
   source("R/getPassword.r")
-  source("R/load2ddiindex.r")
+  source("R/load2ddiindex_study.r")
   
   pwd <- getPassword(remote=T)
   ch <- connect2oracle('115.146.93.225', db="DDIINDEXDB", p = pwd)
@@ -613,15 +652,14 @@ sql <- sql_subset(conn=ch, x='spatial_ref_sys',
   t(stdy)
   
   load2ddiindex_study(conn = ch, stdy)
-  load2ddiindex_file(conn = ch, file)
   
 #+end_src
 
-*** R-load2ddiindex
-#+name:load2ddiindex
-#+begin_src R :session *R* :tangle R/load2ddiindex.r :exports none :eval no
+*** R-load2ddiindex_study
+#+name:load2ddiindex_study
+#+begin_src R :session *R* :tangle R/load2ddiindex_study.r :exports none :eval no
   ################################################################
-  # name:load2ddiindex
+  # name:load2ddiindex_study
   load2ddiindex_study <- function(conn=NA, stdydscr)
   {
   
@@ -641,7 +679,34 @@ sql <- sql_subset(conn=ch, x='spatial_ref_sys',
       )
     }
   }
+#+end_src
+** load2ddiindex_file
+*** test-load2ddiindex_file
+#+name:load2ddiindex_file
+#+begin_src R :session *R* :tangle tests/test-load2ddiindex_file.r :exports none :eval no
+  ################################################################
+  # name:load2ddiindex_file
+    source("R/connect2oracle.r")
+    source("R/add_filedscr.r")
+    source("R/getPassword.r")
+    source("R/load2ddiindex_file.r")
+    
+    pwd <- getPassword(remote=T)
+    ch <- connect2oracle('115.146.93.225', db="DDIINDEXDB", p = pwd)
+    if(!exists('stdy'))
+    {
+      stdy <- add_filedscr(ask = T)
+    }
   
+    load2ddiindex_file(conn = ch, file)
+    
+  
+#+end_src
+*** R-load2ddiindex_file
+#+name:load2ddiindex_file
+#+begin_src R :session *R* :tangle R/load2ddiindex_file.r :exports none :eval no
+################################################################
+# name:load2ddiindex_file
   
   load2ddiindex_file <- function(conn=NA, filedscr)
   {
@@ -664,8 +729,17 @@ sql <- sql_subset(conn=ch, x='spatial_ref_sys',
   
       }
   }
-  
+
 #+end_src
+*** man-load2ddiindex_file
+#+name:load2ddiindex_file
+#+begin_src R :session *R* :tangle man/load2ddiindex_file.Rd :exports none :eval no
+################################################################
+# name:load2ddiindex_file
+
+#+end_src
+
+
 
 ** add_datadscr
 *** test-add_datadscr
@@ -683,30 +757,13 @@ sql <- sql_subset(conn=ch, x='spatial_ref_sys',
                            user='gislibrary', p=p)
     pwd <- getPassword(remote=T)
     ch <- connect2oracle('115.146.93.225', db="DDIINDEXDB", p = pwd)
-  
+    # for files that are already loaded on ewedb
     airquality <- sql_subset(ewedb, 'airquality', limit = 1, eval = T)
     airquality
-    file <- dbGetQuery(ch, "select * from filedscr where idno = 'R_DATASETS'")
-    fid <- dbGetQuery(ch,
-    #                  cat(
-                      paste("select FILEID
-                      from filedscr
-                      where filelocation = '",file$FILELOCATION,"'
-                      and filename = '",file$FILENAME,"'",
-                      sep=''))
-    datadscr <- add_datadscr(data_frame = airquality, fileid = fid[1,1], ask=T)
-  
-  
-    for(i in 1:nrow(datadscr)){
-    dbSendUpdate(ch,
-    #i = 1
-    # cat(
-    paste('
-    insert into DATADSCR (',paste(names(datadscr), sep = '', collapse = ', '),')
-    VALUES (',paste("'",paste(gsub("'","",ifelse(is.na(datadscr[i,]),'',datadscr[i,])),sep='',collapse="', '"),"'",sep=''),')',sep='')
-    )
-    }
-  
+    # else load the file from CSV or similar
+    datadscr <- add_datadscr(data_frame = airquality, fileid = 1, ask=T)
+
+
 #+end_src
 
 *** R-add_datadscr
@@ -749,6 +806,48 @@ add_datadscr <- function(data_frame, fileid = NA,notes=NA,specperm=F,ask=F){
 
 #+end_src
 
+** load2ddiindex_data
+*** test-load2ddiindex_data
+#+name:load2ddiindex_data
+#+begin_src R :session *R* :tangle tests/test-load2ddiindex_data.r :exports none :eval no
+################################################################
+# name:load2ddiindex_data
+
+#+end_src
+*** R-load2ddiindex_data
+#+name:load2ddiindex_data
+#+begin_src R :session *R* :tangle R/load2ddiindex_data.r :exports none :eval no
+################################################################
+# name:load2ddiindex_data
+
+    file <- dbGetQuery(ch, "select * from filedscr where idno = 'R_DATASETS'")  
+    fid <- dbGetQuery(ch,
+    #                  cat(
+                      paste("select FILEID
+                      from filedscr
+                      where filelocation = '",file$FILELOCATION,"'
+                      and filename = '",file$FILENAME,"'",
+                      sep=''))
+
+  
+    for(i in 1:nrow(datadscr)){
+    dbSendUpdate(ch,
+    #i = 1
+    # cat(
+    paste('
+    insert into DATADSCR (',paste(names(datadscr), sep = '', collapse = ', '),')
+    VALUES (',paste("'",paste(gsub("'","",ifelse(is.na(datadscr[i,]),'',datadscr[i,])),sep='',collapse="', '"),"'",sep=''),')',sep='')
+    )
+    }
+
+#+end_src
+*** man-load2ddiindex_data
+#+name:load2ddiindex_data
+#+begin_src R :session *R* :tangle man/load2ddiindex_data.Rd :exports none :eval no
+################################################################
+# name:load2ddiindex_data
+
+#+end_src
 
 ** make_ddixml
 *** test-make_ddixml
