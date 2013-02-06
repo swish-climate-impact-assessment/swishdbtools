@@ -1,3 +1,4 @@
+
 ################################################################
 # name:connect2oracle
 # make sure you have JDK, if not install the SUN version

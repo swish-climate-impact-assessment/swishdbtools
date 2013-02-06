@@ -8,6 +8,635 @@
 
 * Introduction
 * functions
+** add_datadscr
+*** test-add_datadscr
+#+name:test-add_datadscr
+#+begin_src R :session *R* :tangle tests/test-add_datadscr.r :exports none :eval no
+  ################################################################
+  # name:test-add_datadscr
+  source("R/add_datadscr.r")
+  require(swishdbtools)
+  if(!exists('p'))
+  {
+    p <- getPassword()
+  }
+  ewedb <- connect2postgres('localhost', db='django',
+                         user='gislibrary', p=p)
+  pwd <- getPassword(remote=T)
+  ch <- connect2oracle('115.146.93.225', db="DDIINDEXDB", p = pwd)
+  # for files that are already loaded on ewedb
+  airquality <- sql_subset(ewedb, 'airquality', limit = 1, eval = T)
+  airquality
+  # else load the file from CSV or similar
+  baseball <- read.csv('baseball.csv')
+  # now add variable labels
+  datadscr <- add_datadscr(data_frame = airquality, fileid = 1, ask=T)
+  datadscr <- add_datadscr(data_frame = baseball, ask=T)
+  
+#+end_src
+
+*** R-add_datadscr
+#+name:add_datadscr
+#+begin_src R :session *R* :tangle R/add_datadscr.r :exports none :eval no
+  ################################################################
+  # name:add_datadscr
+  add_datadscr <- function(data_frame, fileid = NA,notes=NA,specperm=F,ask=F){
+  
+  
+    labls=names(data_frame)
+    datadscr=as.data.frame(matrix(nrow=length(labls),ncol=4, byrow=TRUE))
+    names(datadscr)=c('LABL','NOTES','SPECPERMVAR', 'FILEID')
+    datadscr$LABL=labls
+    if( !is.na(notes) ){ stopifnot(length(notes) == length(labls))}
+    
+    if(!is.na(notes[1])) {
+      datadscr$NOTES=notes
+    } else if(ask==F){
+      datadscr$NOTES=rep('',length(labls))
+    } else {
+      for(i in 1:length(labls) ){
+        #if element is null then
+        labl=labls[i]
+        datadscr[i,1]=labl
+        datadscr[i,2]=readline(paste("enter descriptions for the ",labl,": "))
+        if(specperm==T) datadscr[i,3]=readline(paste("special permissions for ",labl,": "))
+      }
+    }
+    datadscr$FILEID=fileid
+    # cat(paste("write.table(f,'metadata/{study}_ddi_filedscr.csv',sep=',',row.names=F)
+    #           # OR
+    #           write.table(f,'metadata/{study}_ddi_filedscr.csv',sep=',',row.names=F, append=T, col.names=F)
+    #           ",sep=''))
+  
+    return(datadscr)
+    
+  }
+  
+  
+#+end_src
+
+** add_filedscr
+*** test-add_filedscr
+#+name:test-add_stdydscr
+#+begin_src R :session *R* :tangle tests/test-add_filedscr.r :exports none :eval no
+  ################################################################
+  # name:test-add_stdydscr
+  
+  source("R/add_filedscr.r")
+   
+  file <- add_filedscr(fileid = 1, idno = 'R_DATASETS', ask=T)
+  
+  t(file)
+  
+  
+#+end_src
+*** R-add_filedscr
+#+name:add_filedscr
+#+begin_src R :session *R* :tangle R/add_filedscr.r :exports none :eval no
+  ################################################################
+  # name:add_filedscr
+  add_filedscr <- function(fileid=NA,idno=NA,filename=NA,notes='NCEPH_Unrestricted',filelocation=NA,file_description='',ask=F){
+    if (!require(sqldf)) install.packages('sqldf')
+    require(sqldf)
+    if (!require(R2HTML)) install.packages('R2HTML')
+    require(R2HTML)
+      
+    elements = c('IDNO','FILENAME','FILETYPE','PROCSTAT','SPECPERMFILE','DATEARCHIVED','DATEDESTROY','FILEDSCR','NOTES','REQID','PUBLISHDDI','BACKUPVALID','DATEBACKUPVALID','CHECKED','BACKUPLOCATION')
+    filedscr=as.data.frame(matrix(nrow=1,ncol=length(elements), byrow=TRUE))
+    names(filedscr)=elements
+    stopifnot(!is.na(idno)) 
+    filedscr$IDNO =idno
+    if(is.na(fileid)) {fileid<- readline('fileid, one number for each file in the study: ')}
+    filedscr$FILEID =fileid
+    if(is.na(filename)) {filename<- readline('filename: ')}
+    filedscr$FILENAME =filename
+    if(is.na(notes)) {notes<- readline('notes: ')}
+    filedscr$NOTES =notes
+  #  if(is.na(filelocation)) {filelocation <- getwd()}
+    if(is.na(filelocation)) {filelocation <- readline('file_location: ')}
+    filedscr$FILELOCATION =filelocation
+    if(is.na(file_description)) {file_description<- readline('file_description: ')}
+    filedscr$FILEDSCR=file_description
+    
+    if(ask==F){
+      filedscr$FILELOCATION = getwd()
+      filedscr$FILETYPE =''
+      filedscr$PROCSTAT =''
+      filedscr$SPECPERMFILE =''
+      filedscr$DATEARCHIVED =''
+      filedscr$DATEDESTROY =''
+      filedscr$REQID =''
+      filedscr$PUBLISHDDI =''
+      filedscr$BACKUPVALID =''
+      filedscr$DATEBACKUPVALID =''
+      filedscr$CHECKED =''
+      filedscr$BACKUPLOCATION =''
+    } else {
+      for(i in 3:length(elements)){
+        element=elements[i]
+        filedscr[1,i]=readline(paste("enter descriptions for the ",element,": "))
+      }
+    }
+    
+    return(filedscr)
+  }
+  
+#+end_src
+
+** add_stdydscr
+*** test-add_stdydscr
+#+name:test-add_stdydscr
+#+begin_src R :session *R* :tangle tests/test-add_stdydscr.r :exports none :eval no
+  ################################################################
+  # name:test-add_stdydscr
+  source("R/connect2oracle.r")
+  source("R/add_stdydscr.r")
+  source("R/getPassword.r")
+  
+  pwd <- getPassword(remote=T)
+  ch <- connect2oracle('115.146.93.225', db="DDIINDEXDB", p = pwd)
+  
+  stdy <- add_stdydscr(idno='R_DATASETS', 'The R Datasets Package
+  Description',
+                       ask = T)
+  t(stdy)
+  
+  
+#+end_src
+
+*** R-add_stdydscr
+#+name:add_stdydscr
+#+begin_src R :session *R* :tangle R/add_stdydscr.r :exports none :eval no
+  t################################################################
+  # name:add_stdydscr
+  
+  add_stdydscr <- function(idno=NA,titl=NA,abstract=NA,authoring_entity_of_data=NA,
+  distrbtr='NCEPH data manager',bibliographic_citation=NA,notes='NCEPH Unrestricted', restrctn=NA,datakind='OTHER',ask=F){
+  if (!require(sqldf)) install.packages('sqldf')
+  require(sqldf)
+  if (!require(R2HTML)) install.packages('R2HTML')
+  require(R2HTML)
+    
+    elements = c('TITL','IDNO','PRODUCER','PRODDATEDOC','BIBLCITDOC','AUTHENTY','COPYRIGHT','PRODDATESTDY','FUNDAG','DISTRBTR','SERNAME','VERSION','BIBLCITSTDY','TIMEPRD','COLLDATE','GEOGCOVER','GEOGUNIT','ANLYUNIT','UNIVERSE','DATAKIND','CLEANOPS','CONFDEC','SPECPERM','RESTRCTN','NOTES','ABSTRACT')
+    
+    stdydscr=as.data.frame(matrix(nrow=1,ncol=length(elements), byrow=TRUE))
+    names(stdydscr)=elements
+    if(is.na(titl)) {titl<- readline('title of study: ')}
+    stdydscr$TITL =titl
+    if(is.na(idno)) {idno<- readline('ID code of study: ')}
+    stdydscr$IDNO =idno
+    if(is.na(abstract)) {abstract<- readline('abstract: ')}
+    stdydscr$ABSTRACT =abstract
+    if(is.na(authoring_entity_of_data)) {authoring_entity_of_data<- readline('authoring_entity_of_data: ')}
+    stdydscr$AUTHENTY =authoring_entity_of_data
+    # auto
+    stdydscr$PRODDATEDOC =Sys.Date()
+    
+    if(ask==F){
+      stdydscr$PRODUCER =''
+      
+      stdydscr$BIBLCITDOC =''
+      stdydscr$COPYRIGHT =''
+      stdydscr$PRODDATESTDY =''
+      stdydscr$FUNDAG =''
+      stdydscr$DISTRBTR = distrbtr
+      stdydscr$SERNAME =''
+      stdydscr$VERSION =''
+      stdydscr$BIBLCITSTDY =bibliographic_citation
+      stdydscr$TIMEPRD =''
+      stdydscr$COLLDATE =''
+      stdydscr$GEOGCOVER =''
+      stdydscr$GEOGUNIT =''
+      stdydscr$ANLYUNIT =''
+      stdydscr$UNIVERSE =''
+      stdydscr$DATAKIND =datakind
+      stdydscr$CLEANOPS =''
+      stdydscr$CONFDEC =''
+      stdydscr$SPECPERM =''
+      stdydscr$RESTRCTN =restrctn
+      stdydscr$NOTES =notes
+      
+    } else {
+      for(i in c(7:(length(elements)-1))){
+        element=elements[i]
+        stdydscr[1,i]=readline(paste("enter descriptions for the ",element,": "))
+      }
+    }
+    stdydscr$PRODDATESTDY <- format(as.Date( substr(stdydscr$PRODDATESTDY,1,10),'%Y-%m-%d'),"%d/%b/%Y")
+    stdydscr$PRODDATEDOC <- format(as.Date( substr(stdydscr$PRODDATEDOC,1,10),'%Y-%m-%d'),"%d/%b/%Y")
+
+
+
+    # TASK add a caveat that if NOTES is null then NCEPH Unrestricted
+    return(stdydscr)
+  }
+  
+  
+#+end_src
+** connect2oracle
+*** test-connect2oracle
+#+name:connect2oracle
+#+begin_src R :session *R* :tangle tests/test-connect2oracle.r :exports none :eval no
+################################################################
+# name:connect2oracle
+
+#+end_src
+*** R-connect2oracle
+#+name:connect2oracle
+#+begin_src R :session *R* :tangle R/connect2oracle.r :exports none :eval no
+################################################################
+# name:connect2oracle
+# make sure you have JDK, if not install the SUN version
+#http://blog.i-evaluation.com/2012/12/03/installing-java-sdk-and-jre-bin-files-on-my-ec2-instance/
+# then get the JDBC driver from http://www.oracle.com/technetwork/database/enterprise-edition/jdbc-112010-090769.html
+# put into /lib
+##  did install.packages('rJava') and then
+# "R CMD javareconf" as root
+connect2oracle <- function(hostip=NA, db=NA, p=NA,
+                           driverlocation='/lib/ojdbc6.jar'){
+  if(!require(RJDBC)) install.packages('RJDBC'); require(RJDBC)
+  drv <- JDBC("oracle.jdbc.driver.OracleDriver",
+              '/lib/ojdbc6.jar')
+  
+  if(is.na(hostip)){
+    hostip=readline('enter hostip: ')
+  }
+  if(is.na(db)){
+    db=readline('enter db: ')
+  }
+
+  if(is.na(p)){
+    pwd=readline(paste('enter password for ',db, ': ',sep=''))
+  } else {
+    pwd <- p
+  }
+  
+  ch <- dbConnect(drv,paste("jdbc:oracle:thin:@",hostip,":1521",sep=''),db,pwd)
+  return(ch)
+}
+
+#+end_src
+*** man-connect2oracle
+#+name:connect2oracle
+#+begin_src R :session *R* :tangle no :exports none :eval no
+################################################################
+# name:connect2oracle
+
+#+end_src
+
+** connect2postgres
+*** test-connect2postgres
+#+name:connect2postgres
+#+begin_src R :session *R* :tangle tests/test-connect2postgres.r :exports none :eval no
+################################################################
+# name:connect2postgres
+
+#+end_src
+*** R-connect2postgres
+#+name:connect2postgres
+#+begin_src R :session *R* :tangle R/connect2postgres.r :exports none :eval no
+#################
+# connect2postgres
+
+connect2postgres <- function(hostip=NA,db=NA,user=NA, p=NA, os = 'linux', pgutils = c('c:/pgutils')){
+ if(is.na(hostip)){
+ hostip=readline('enter hostip: ')
+ } 
+ if(is.na(db)){
+ db=readline('enter db: ')
+ }
+ if(is.na(user)){
+ user=readline('enter user: ')
+ }
+ if(is.na(p)){
+ pwd=readline(paste('enter password for user ',user, ': ',sep=''))
+ } else {
+ pwd <- p
+ }
+ #if(os == 'linux'){
+  if (!require(RPostgreSQL)) install.packages('RPostgreSQL', repos='http://cran.csiro.au'); require(RPostgreSQL)
+  con <- dbConnect(PostgreSQL(),host=hostip, user= user, password=pwd, dbname=db)
+#  } else { 
+#   if (!require(RJDBC)) install.packages('RJDBC'); require(RJDBC) 
+#   # This downloads the JDBC driver to your selected directory if needed
+#   if (!file.exists(file.path(pgutils,'postgresql-8.4-701.jdbc4.jar'))) {
+#   dir.create(pgutils,recursive =T)
+#   download.file('http://jdbc.postgresql.org/download/postgresql-8.4-701.jdbc4.jar',file.path(pgutils,'postgresql-8.4-701.jdbc4.jar'),mode='wb')
+#   }
+#   # connect
+#   pgsql <- JDBC( 'org.postgresql.Driver', file.path(pgutils,'postgresql-8.4-701.jdbc4.jar'))
+#   con <- dbConnect(pgsql, paste('jdbc:postgresql://',hostip,'/',db,sep=''), user = user, password = pwd)
+#  }
+ # clean up
+ rm(pwd)
+ return(con)
+ }
+ #  ch <- connect2postgres()
+ # enter password at console
+
+#+end_src
+*** man-connect2postgres
+#+name:connect2postgres
+#+begin_src R :session *R* :tangle no :exports none :eval no
+################################################################
+# name:connect2postgres
+
+#+end_src
+
+** ddiindexdb_remove_file
+*** test-ddiindexdb_remove_file
+#+name:ddiindexdb_remove_file
+#+begin_src R :session *R* :tangle tests/test-ddiindexdb_remove_file.r :exports none :eval no
+  ################################################################
+  # name:ddiindexdb_remove_file
+  require(swishdbtools)
+  source("R/ddiindexdb_remove_file.r")
+  p <- getPassword()
+  ddiindexdb <- connect2oracle('115.146.93.225', 'ddiindexdb', p = p)
+  ddiindexdb_remove_file(ddiindexdb, x = "public.baseball")
+  
+#+end_src
+*** R-ddiindexdb_remove_file
+#+name:ddiindexdb_remove_file
+#+begin_src R :session *R* :tangle R/ddiindexdb_remove_file.r :exports none :eval no
+    ################################################################
+    # name:ddiindexdb_remove_file
+  
+    ddiindexdb_remove_file <- function(conn, x)
+    {
+    if(length(grep("\\.",x)) == 0)
+      {
+        schema <- "public"
+        table <- x
+      } else {
+        schema <- strsplit(x, "\\.")[[1]][1]
+        table <- strsplit(x, "\\.")[[1]][2]
+      }
+  
+    fid <- dbGetQuery(ch,
+                paste("delete from ddiindexdb.filedscr where filelocation = '",schema,"'  and filename = '",table,"'", sep ="")
+                     )
+  #  fid
+  
+    dbSendUpdate(ch,
+                paste("delete from ddiindexdb.datadscr where fileid = ",
+                fid[1,1], sep ="")
+                )
+  
+    dbSendUpdate(ch,
+                paste("delete from ddiindexdb.filedscr where filelocation = '",schema,"'  and filename = '",table,"'", sep ="")
+                )
+    }
+  
+#+end_src
+*** man-ddiindexdb_remove_file
+#+name:ddiindexdb_remove_file
+#+begin_src R :session *R* :tangle man/ddiindexdb_remove_file.Rd :exports none :eval no
+################################################################
+# name:ddiindexdb_remove_file
+
+#+end_src
+
+** DEPRECATED df2ddi
+** ddiindexdb_sync_study
+*** test-ddiindexdb_sync_study
+#+name:ddiindexdb_sync_study
+#+begin_src R :session *R* :tangle tests/test-ddiindexdb_sync_study.r :exports none :eval no
+################################################################
+# name:ddiindexdb_sync_study
+
+#+end_src
+*** R-ddiindexdb_sync_study
+#+name:ddiindexdb_sync_study
+#+begin_src R :session *R* :tangle R/ddiindexdb_sync_study.r :exports none :eval no
+################################################################
+# name:ddiindexdb_sync_study
+
+#+end_src
+*** man-ddiindexdb_sync_study
+#+name:ddiindexdb_sync_study
+#+begin_src R :session *R* :tangle no :exports none :eval no
+################################################################
+# name:ddiindexdb_sync_study
+
+#+end_src
+
+** getPassword
+*** test-getPassword
+#+name:getPassword
+#+begin_src R :session *R* :tangle tests/test-getPassword.r :exports none :eval no
+test_that('password returns string with characters', {
+  expect_that(nchar(getPassword(remote = T))>0, is_true())
+#  expect_that(nchar(getPassword(remote = F))>0, is_true())
+  # getPassword(remote = T))
+  # expect_that(is.character(getPassword(remote = T)), is_true)
+})
+
+
+# dev tests
+# getPassword(remote = T)
+# getPassword(remote = F)
+#+end_src
+*** R-getPassword
+#+name:getPassword
+#+begin_src R :session *R* :tangle R/getPassword.r :exports none :eval no
+
+###########################################################################
+# newnode: getPassword
+getPassword <- function(remote = F){
+  if(remote == F){
+   require(tcltk)
+   tt <- tktoplevel()
+   pass=tclVar('')
+   label.widget <- tklabel(tt, text='Enter Password')
+   password.widget <- tkentry(tt,show='*',textvariable=pass)
+   ok <- tkbutton(tt,text='Ok',command=function()tkdestroy(tt))
+   tkpack(label.widget, password.widget,ok)
+   tkwait.window(tt)
+   return(tclvalue(pass))
+ } else {
+   pass <- readline('Type your password into the console: ')
+   return(pass)
+ }
+}
+
+
+# pwd <- getPassword()
+
+#+end_src
+*** man-getPassword
+#+name:getPassword
+#+begin_src R :session *R* :tangle no :exports none :eval no
+################################################################
+# name:getPassword
+
+#+end_src
+
+** load2ddiindex_data
+*** test-load2ddiindex_data
+#+name:load2ddiindex_data
+#+begin_src R :session *R* :tangle tests/test-load2ddiindex_data.r :exports none :eval no
+  ################################################################
+  # name:load2ddiindex_data
+  source('R/load2ddiindex_data.r')
+  require(swishdbtools)
+  
+  p <- getPassword()
+  ch <- connect2oracle('115.146.93.225', db='DDIINDEXDB', p=p)
+  load2ddiindex_data(ch, filepath = "public.baseball", datadscr)
+#+end_src
+*** R-load2ddiindex_data
+#+name:load2ddiindex_data
+#+begin_src R :session *R* :tangle R/load2ddiindex_data.r :exports none :eval no
+  ################################################################
+  # name:load2ddiindex_data
+  
+  load2ddiindex_data <- function(conn, filepath, datadscr)
+   {
+     if(length(grep("\\.",filepath)) == 0)
+      {
+        schema <- "public"
+        table <- filepath
+      } else {
+        schema <- strsplit(filepath, "\\.")[[1]][1]
+        table <- strsplit(filepath, "\\.")[[1]][2]
+      }
+
+  sql <- sql_subset(ch, 'ddiindexdb.filedscr',
+                    subset = paste("filelocation = '",schema,"' and filename = '",table,"'", sep =""),
+                    eval=F, check =F)
+  #cat(sql)
+  file <- dbGetQuery(ch, sql)
+  fid <- file$FILEID
+  #fid
+  datadscr$FILEID <- fid
+  for(i in 1:nrow(datadscr))
+    {
+    dbSendUpdate(ch,
+      paste('
+      insert into DATADSCR (',paste(names(datadscr), sep = '', collapse = ', '),')
+      VALUES (',paste("'",paste(gsub("'","",ifelse(is.na(datadscr[i,]),'',datadscr[i,])),sep='',collapse="', '"),"'",sep=''),')',sep='')
+     )
+  
+    }
+  }
+  
+#+end_src
+*** man-load2ddiindex_data
+#+name:load2ddiindex_data
+#+begin_src R :session *R* :tangle man/load2ddiindex_data.Rd :exports none :eval no
+################################################################
+# name:load2ddiindex_data
+
+#+end_src
+
+** load2ddiindex_file
+*** test-load2ddiindex_file
+#+name:load2ddiindex_file
+#+begin_src R :session *R* :tangle tests/test-load2ddiindex_file.r :exports none :eval no
+  ################################################################
+  # name:load2ddiindex_file
+    source("R/connect2oracle.r")
+    source("R/add_filedscr.r")
+    source("R/getPassword.r")
+    source("R/load2ddiindex_file.r")
+    
+    pwd <- getPassword(remote=T)
+    ch <- connect2oracle('115.146.93.225', db="DDIINDEXDB", p = pwd)
+    if(!exists('file'))
+    {
+      file <- add_filedscr(ask = T)
+    }
+  
+    load2ddiindex_file(conn = ch, file)
+    
+  
+#+end_src
+*** R-load2ddiindex_file
+#+name:load2ddiindex_file
+#+begin_src R :session *R* :tangle R/load2ddiindex_file.r :exports none :eval no
+################################################################
+# name:load2ddiindex_file
+  
+  load2ddiindex_file <- function(conn=NA, filedscr)
+  {
+  
+  
+  
+    if(exists('filedscr'))
+      {
+      fileexists <- dbGetQuery(conn,
+                  paste("select * from filedscr where filename = '",filedscr$FILENAME,"' and filelocation ='",filedscr$FILELOCATION,"'", sep="")
+                  )
+      if(nrow(fileexists) > 0) stop('File record already exists.')
+      
+    dbSendUpdate(ch,
+    # cat(
+      paste('
+      insert into FILEDSCR (',paste(names(filedscr), sep = '', collapse = ', '),')
+      VALUES (',paste("'",paste(gsub("'","",ifelse(is.na(filedscr),'',filedscr)),sep='',collapse="', '"),"'",sep=''),')',sep='')
+    )
+  
+      }
+  }
+
+#+end_src
+*** man-load2ddiindex_file
+#+name:load2ddiindex_file
+#+begin_src R :session *R* :tangle man/load2ddiindex_file.Rd :exports none :eval no
+################################################################
+# name:load2ddiindex_file
+
+#+end_src
+
+** load2ddiindex_study
+*** test-load2ddiindex_study
+#+name:test-load2ddiindex_study
+#+begin_src R :session *R* :tangle tests/test-load2ddiindex_study.r :exports none :eval no
+  ################################################################
+  # name:test-load2ddiindex_study
+  source("R/connect2oracle.r")
+  source("R/add_stdydscr.r")
+  source("R/getPassword.r")
+  source("R/load2ddiindex_study.r")
+  
+  pwd <- getPassword(remote=T)
+  ch <- connect2oracle('115.146.93.225', db="DDIINDEXDB", p = pwd)
+  if(!exists('stdy'))
+  {
+    stdy <- add_stdydscr(ask = T)
+  }
+  t(stdy)
+  
+  load2ddiindex_study(conn = ch, stdy)
+  
+#+end_src
+
+*** R-load2ddiindex_study
+#+name:load2ddiindex_study
+#+begin_src R :session *R* :tangle R/load2ddiindex_study.r :exports none :eval no
+  ################################################################
+  # name:load2ddiindex_study
+  load2ddiindex_study <- function(conn=NA, stdydscr)
+  {
+  
+    if(exists('stdydscr'))
+      {
+        stdyexists <- dbGetQuery(conn,
+                  paste("select * from stdydscr where idno = '",stdydscr$IDNO,"'", sep="")
+                  )
+      if(nrow(stdyexists) > 0) stop('Study record already exists.')
+      
+  
+    dbSendUpdate(conn,
+    #   cat(
+      paste('
+      insert into STDYDSCR (',paste(names(stdydscr), sep = '', collapse = ', '),')
+      VALUES (',paste("'",paste(gsub("'","",ifelse(is.na(stdydscr),'',stdydscr)),sep='',collapse="', '"),"'",sep=''),')',sep='')
+      )
+    }
+  }
+#+end_src
 ** load2postgres
 *** test-load2postgres
 #+name:test-load2postgres
@@ -214,723 +843,6 @@ load2postgres <- function(inputfilepath,schema,tablename,pk=NULL,header=TRUE,pri
   }
   
 }
-
-#+end_src
-
-** sql_subset
-*** test-sql_subset.r
-#+name:test-sql_subset.r
-#+begin_src R :session *R* :tangle tests/test-sql_subset.r :exports none :eval no
-  
-  ## install.packages("~/tools/swishdbtools_1.1_R_x86_64-pc-linux-gnu.tar.gz", repos = NULL, type = "source")
-  require(swishdbtools)
-  ##  ch <- connect2postgres('localhost', db='django', user='gislibrary', p='gislibrary')
-  ## test_that('postgis data exists', {
-  ##   expect_that(is.character(sqlquery_select(conn=ch, select='srid, srtext',x='spatial_ref_sys', limit = 2, subset = "srid = 4283", eval = F)), is_true())
-  ##   expect_that(nrow(sqlquery_select(conn=ch, select='srid, srtext',x='spatial_ref_sys', limit = 2, subset = "srid = 4283", eval = T))==1, is_true())
-  ## })
-  
-  #
-  # dev tests
-  source("R/sql_subset.r")
-  source("R/pgListTables.r")
-  if(!exists('p'))
-  {
-    p <- getPassword()
-  }
-   ewedb <- connect2postgres('115.146.84.135', db='ewedb', user='gislibrary', p=p)
-   sql <- sql_subset(conn=ewedb, x='public.spatial_ref_sys',
-                     subset = "srid = 4283", select='srid, srtext',
-                     limit = 2, eval = T, check = T)
-  ## cat(sql) # if eval=F
-   nrow(sql)==1 # if eval=T
-  
-  #sql_subset(ewedb, 'airquality', 'Temp > 80', 'Ozone, Temp', eval = T,
-  #           limit = 6)
-  sql_subset(ewedb, 'dbsize', select = '*', eval=T)
-  dbSendQuery(ewedb, 'drop table temp101')
-  sql_subset(ewedb, 'dbsize', select = '*', eval=T)
-  
-#+end_src
-*** R-sql_subset.r
-#+name:sql_subset
-#+begin_src R :session *R* :tangle R/sql_subset.r :exports none :eval no
-  ################################################################
-  # name:sqlquery_select
-  
-  sql_subset <- function(conn, x, subset = NA, select = "*",
-                              limit = -1, eval = FALSE, check = T)
-  {
-    # assume ch exists
-    if(length(grep("\\.",x)) == 0)
-      {
-        schema <- "public"
-        table <- x
-      } else {
-        schema <- strsplit(x, "\\.")[[1]][1]
-        table <- strsplit(x, "\\.")[[1]][2]
-      }
-  
-  
-    if(check)
-      {
-      exists <- pgListTables(conn, schema, table)
-      if(nrow(exists) == 0)
-      {
-        stop("Table doesn't exist.")
-      }
-  
-      }
-  
-  
-    if(check & select=="*")
-      {
-        select <- names(
-                       dbGetQuery(conn,
-                        paste("select ", select, " from ",
-                        schema, ".",
-                        table, " limit 1",
-                        sep = ""))
-                       )
-        select <- paste(select, collapse = ", ", sep = "")
-      } 
-
-    sqlquery <- paste("select ", select, "\nfrom ", schema, ".",
-                      table, "\n",
-                      sep = "")
-  
-    if(!is.na(subset))
-      {
-        sqlquery <- paste(sqlquery, "where ", subset, "\n", sep = "")
-      }
-  
-    if(limit > 0)
-      {
-        sqlquery <- paste(sqlquery, "limit ", limit, "\n", sep = "")
-      }
-  
-    if(eval)
-      {
-        dat <- dbGetQuery(conn,sqlquery)
-        return(dat)
-      } else {
-        return(sqlquery)
-      }
-  
-  }
-  
-#+end_src
-
-*** man-sql_subset.Rd
-#+name:sql_subset
-#+begin_src R :session *R* :tangle man/sql_subset.Rd :exports none :eval no
-\name{sql_subset}
-\alias{sql_subset}
-%- Also NEED an '\alias' for EACH other topic documented here.
-\title{
-sql_subset
-}
-\description{
-Constructs an SQL query for a postgres database. Modelled on the base R function 'subset'.
-}
-\usage{
-sql_subset(conn, x, subset, select, schema, limit, eval)
-}
-%- maybe also 'usage' for other objects documented here.
-\arguments{
-  \item{conn}{
-%%     ~~Describe \code{remote} here~~
-database connection
-}
- \item{x}{
-%%     ~~Describe \code{remote} here~~
-the table name
-}
- \item{subset}{
-%%     ~~Describe \code{remote} here~~
-the SQL 'where' statement
-}
- \item{select}{
-%%     ~~Describe \code{remote} here~~
-which variables to include
-}
- \item{schema}{
-%%     ~~Describe \code{remote} here~~
-the schema that has the table in it
-}
- \item{limit}{
-%%     ~~Describe \code{remote} here~~
-limit, often useful for debugging
-}
- \item{eval}{
-%%     ~~Describe \code{remote} here~~
-evaluate the query on the database?
-}
-}
-\details{
-%%  ~~ If necessary, more details than the description above ~~
-}
-\value{
-%%  ~Describe the value returned
-%%  If it is a LIST, use
-%%  \item{comp1 }{Description of 'comp1'}
-%%  \item{comp2 }{Description of 'comp2'}
-%% ...
-}
-\references{
-%% ~put references to the literature/web site here ~
-}
-\author{
-ivanhanigan
-}
-\note{
-%%  ~~further notes~~
-}
-
-%% ~Make other sections like Warning with \section{Warning }{....} ~
-
-\seealso{
-%% ~~objects to See Also as \code{\link{help}}, ~~~
-}
-\examples{
-ch <- connect2postgres('115.146.84.135', db='ewedb',
-                       user='gislibrary', p='gislibrary')
-sql <- sql_subset(conn=ch, x='spatial_ref_sys',
-                  subset = "srid = 4283", select='srid, srtext',
-                  limit = 2, eval = T)
-  
-  
-}
-% Add one or more standard keywords, see file 'KEYWORDS' in the
-% R documentation directory.
-\keyword{ ~kwd1 }
-\keyword{ ~kwd2 }% __ONLY ONE__ keyword per line
-
-#+end_src
-
-
-** sql_subset_into
-*** test-sql_subset_into
-#+name:test-sql_subset_into
-#+begin_src R :session *R* :tangle tests/test-sql_subset_into.r :exports none :eval no
-  source("R/connect2postgres.r")
-  source("R/sql_subset.r")
-  source("R/sql_subset_into.r")
-  source("R/pgListTables.r")
-  
-  ch <- connect2postgres('115.146.84.135', db='ewedb', user='gislibrary', p='gislibrary')
-  sql_subset_into(ch, 'dbsize',into_table='temp101', select = '*', eval=T)
-  sql_subset(ch, 'temp101', eval = T)
-  dbSendQuery(ch, 'drop table temp101')
-  
-#+end_src
-
-
-*** R-sql_subset_into
-#+name:sql_subset_into
-#+begin_src R :session *R* :tangle R/sql_subset_into.r :exports none :eval no
-  sql_subset_into <- function(conn, x, ..., into_schema = "public", into_table, eval = FALSE, drop = TRUE)
-  {
-    sql <- sql_subset(ch, x=x, ..., eval=F)
-    sql <- gsub('from', paste("into ", into_schema, ".", into_table, "\nfrom ", sep = ""), sql)
-    if(eval)
-    {
-      exists <- pgListTables(conn, into_schema, into_table)
-      if(nrow(exists) > 0 & drop)
-        {
-          dbSendQuery(conn, paste("drop table ", into_schema, ".",
-                                  into_table, sep =""))
-        } else if (nrow(exists) > 0 & !drop)
-          {
-            stop("Table exists. Aborting.")
-          }
-    
-      dbSendQuery(conn, sql)
-      #dat <- dbGetQuery(conn, paste("select * from ", into_schema, ".", into_table, sep = ""))
-      #return(dat)
-    } else {
-      return(sql)
-    }
-  }
-    
-#+end_src
-
-** sql_summarise
-*** test-sql_summarise
-#+name:sql_summarise
-#+begin_src R :session *R* :tangle tests/test-sql_summarise.r :exports none :eval no
-  ################################################################
-  # name:sql_summarise
-  require(plyr)
-  summarise(baseball,
-   duration = max(year) - min(year),
-   nteams = length(unique(team)))
-  head(baseball)
-  head(
-  ddply(baseball, "id", summarise,
-   duration = max(year) - min(year),
-   nteams = length(unique(team)))
-  )
-  
-#+end_src
-*** R-sql_summarise
-#+name:sql_summarise
-#+begin_src R :session *R* :tangle R/sql_summarise.r :exports none :eval no
-################################################################
-# name:sql_summarise
-
-#+end_src
-*** man-sql_summarise
-#+name:sql_summarise
-#+begin_src R :session *R* :tangle man/sql_summarise.Rd :exports none :eval no
-################################################################
-# name:sql_summarise
-
-#+end_src
-
-** add_stdydscr
-*** test-add_stdydscr
-#+name:test-add_stdydscr
-#+begin_src R :session *R* :tangle tests/test-add_stdydscr.r :exports none :eval no
-  ################################################################
-  # name:test-add_stdydscr
-  source("R/connect2oracle.r")
-  source("R/add_stdydscr.r")
-  source("R/getPassword.r")
-  
-  pwd <- getPassword(remote=T)
-  ch <- connect2oracle('115.146.93.225', db="DDIINDEXDB", p = pwd)
-  
-  stdy <- add_stdydscr(idno='R_DATASETS', 'The R Datasets Package
-  Description',
-                       ask = T)
-  t(stdy)
-  
-  
-#+end_src
-
-*** R-add_stdydscr
-#+name:add_stdydscr
-#+begin_src R :session *R* :tangle R/add_stdydscr.r :exports none :eval no
-  t################################################################
-  # name:add_stdydscr
-  
-  add_stdydscr <- function(idno=NA,titl=NA,abstract=NA,authoring_entity_of_data=NA,
-  distrbtr='NCEPH data manager',bibliographic_citation=NA,notes='NCEPH Unrestricted', restrctn=NA,datakind='OTHER',ask=F){
-  if (!require(sqldf)) install.packages('sqldf')
-  require(sqldf)
-  if (!require(R2HTML)) install.packages('R2HTML')
-  require(R2HTML)
-    
-    elements = c('TITL','IDNO','PRODUCER','PRODDATEDOC','BIBLCITDOC','AUTHENTY','COPYRIGHT','PRODDATESTDY','FUNDAG','DISTRBTR','SERNAME','VERSION','BIBLCITSTDY','TIMEPRD','COLLDATE','GEOGCOVER','GEOGUNIT','ANLYUNIT','UNIVERSE','DATAKIND','CLEANOPS','CONFDEC','SPECPERM','RESTRCTN','NOTES','ABSTRACT')
-    
-    stdydscr=as.data.frame(matrix(nrow=1,ncol=length(elements), byrow=TRUE))
-    names(stdydscr)=elements
-    if(is.na(titl)) {titl<- readline('title of study: ')}
-    stdydscr$TITL =titl
-    if(is.na(idno)) {idno<- readline('ID code of study: ')}
-    stdydscr$IDNO =idno
-    if(is.na(abstract)) {abstract<- readline('abstract: ')}
-    stdydscr$ABSTRACT =abstract
-    if(is.na(authoring_entity_of_data)) {authoring_entity_of_data<- readline('authoring_entity_of_data: ')}
-    stdydscr$AUTHENTY =authoring_entity_of_data
-    # auto
-    stdydscr$PRODDATEDOC =Sys.Date()
-    
-    if(ask==F){
-      stdydscr$PRODUCER =''
-      
-      stdydscr$BIBLCITDOC =''
-      stdydscr$COPYRIGHT =''
-      stdydscr$PRODDATESTDY =''
-      stdydscr$FUNDAG =''
-      stdydscr$DISTRBTR = distrbtr
-      stdydscr$SERNAME =''
-      stdydscr$VERSION =''
-      stdydscr$BIBLCITSTDY =bibliographic_citation
-      stdydscr$TIMEPRD =''
-      stdydscr$COLLDATE =''
-      stdydscr$GEOGCOVER =''
-      stdydscr$GEOGUNIT =''
-      stdydscr$ANLYUNIT =''
-      stdydscr$UNIVERSE =''
-      stdydscr$DATAKIND =datakind
-      stdydscr$CLEANOPS =''
-      stdydscr$CONFDEC =''
-      stdydscr$SPECPERM =''
-      stdydscr$RESTRCTN =restrctn
-      stdydscr$NOTES =notes
-      
-    } else {
-      for(i in c(7:(length(elements)-1))){
-        element=elements[i]
-        stdydscr[1,i]=readline(paste("enter descriptions for the ",element,": "))
-      }
-    }
-    stdydscr$PRODDATESTDY <- format(as.Date( substr(stdydscr$PRODDATESTDY,1,10),'%Y-%m-%d'),"%d/%b/%Y")
-    stdydscr$PRODDATEDOC <- format(as.Date( substr(stdydscr$PRODDATEDOC,1,10),'%Y-%m-%d'),"%d/%b/%Y")
-
-
-
-    # TASK add a caveat that if NOTES is null then NCEPH Unrestricted
-    return(stdydscr)
-  }
-  
-  
-#+end_src
-** add_filedscr
-*** test-add_filedscr
-#+name:test-add_stdydscr
-#+begin_src R :session *R* :tangle tests/test-add_filedscr.r :exports none :eval no
-  ################################################################
-  # name:test-add_stdydscr
-  
-  source("R/add_filedscr.r")
-   
-  file <- add_filedscr(fileid = 1, idno = 'R_DATASETS', ask=T)
-  
-  t(file)
-  
-  
-#+end_src
-*** R-add_filedscr
-#+name:add_filedscr
-#+begin_src R :session *R* :tangle R/add_filedscr.r :exports none :eval no
-  ################################################################
-  # name:add_filedscr
-  add_filedscr <- function(fileid=NA,idno=NA,filename=NA,notes='NCEPH_Unrestricted',filelocation=NA,file_description='',ask=F){
-    if (!require(sqldf)) install.packages('sqldf')
-    require(sqldf)
-    if (!require(R2HTML)) install.packages('R2HTML')
-    require(R2HTML)
-      
-    elements = c('IDNO','FILENAME','FILETYPE','PROCSTAT','SPECPERMFILE','DATEARCHIVED','DATEDESTROY','FILEDSCR','NOTES','REQID','PUBLISHDDI','BACKUPVALID','DATEBACKUPVALID','CHECKED','BACKUPLOCATION')
-    filedscr=as.data.frame(matrix(nrow=1,ncol=length(elements), byrow=TRUE))
-    names(filedscr)=elements
-    stopifnot(!is.na(idno)) 
-    filedscr$IDNO =idno
-    if(is.na(fileid)) {fileid<- readline('fileid, one number for each file in the study: ')}
-    filedscr$FILEID =fileid
-    if(is.na(filename)) {filename<- readline('filename: ')}
-    filedscr$FILENAME =filename
-    if(is.na(notes)) {notes<- readline('notes: ')}
-    filedscr$NOTES =notes
-  #  if(is.na(filelocation)) {filelocation <- getwd()}
-    if(is.na(filelocation)) {filelocation <- readline('file_location: ')}
-    filedscr$FILELOCATION =filelocation
-    if(is.na(file_description)) {file_description<- readline('file_description: ')}
-    filedscr$FILEDSCR=file_description
-    
-    if(ask==F){
-      filedscr$FILELOCATION = getwd()
-      filedscr$FILETYPE =''
-      filedscr$PROCSTAT =''
-      filedscr$SPECPERMFILE =''
-      filedscr$DATEARCHIVED =''
-      filedscr$DATEDESTROY =''
-      filedscr$REQID =''
-      filedscr$PUBLISHDDI =''
-      filedscr$BACKUPVALID =''
-      filedscr$DATEBACKUPVALID =''
-      filedscr$CHECKED =''
-      filedscr$BACKUPLOCATION =''
-    } else {
-      for(i in 3:length(elements)){
-        element=elements[i]
-        filedscr[1,i]=readline(paste("enter descriptions for the ",element,": "))
-      }
-    }
-    
-    return(filedscr)
-  }
-  
-#+end_src
-
-** load2ddiindex_study
-*** test-load2ddiindex_study
-#+name:test-load2ddiindex_study
-#+begin_src R :session *R* :tangle tests/test-load2ddiindex_study.r :exports none :eval no
-  ################################################################
-  # name:test-load2ddiindex_study
-  source("R/connect2oracle.r")
-  source("R/add_stdydscr.r")
-  source("R/getPassword.r")
-  source("R/load2ddiindex_study.r")
-  
-  pwd <- getPassword(remote=T)
-  ch <- connect2oracle('115.146.93.225', db="DDIINDEXDB", p = pwd)
-  if(!exists('stdy'))
-  {
-    stdy <- add_stdydscr(ask = T)
-  }
-  t(stdy)
-  
-  load2ddiindex_study(conn = ch, stdy)
-  
-#+end_src
-
-*** R-load2ddiindex_study
-#+name:load2ddiindex_study
-#+begin_src R :session *R* :tangle R/load2ddiindex_study.r :exports none :eval no
-  ################################################################
-  # name:load2ddiindex_study
-  load2ddiindex_study <- function(conn=NA, stdydscr)
-  {
-  
-    if(exists('stdydscr'))
-      {
-        stdyexists <- dbGetQuery(conn,
-                  paste("select * from stdydscr where idno = '",stdydscr$IDNO,"'", sep="")
-                  )
-      if(nrow(stdyexists) > 0) stop('Study record already exists.')
-      
-  
-    dbSendUpdate(conn,
-    #   cat(
-      paste('
-      insert into STDYDSCR (',paste(names(stdydscr), sep = '', collapse = ', '),')
-      VALUES (',paste("'",paste(gsub("'","",ifelse(is.na(stdydscr),'',stdydscr)),sep='',collapse="', '"),"'",sep=''),')',sep='')
-      )
-    }
-  }
-#+end_src
-** load2ddiindex_file
-*** test-load2ddiindex_file
-#+name:load2ddiindex_file
-#+begin_src R :session *R* :tangle tests/test-load2ddiindex_file.r :exports none :eval no
-  ################################################################
-  # name:load2ddiindex_file
-    source("R/connect2oracle.r")
-    source("R/add_filedscr.r")
-    source("R/getPassword.r")
-    source("R/load2ddiindex_file.r")
-    
-    pwd <- getPassword(remote=T)
-    ch <- connect2oracle('115.146.93.225', db="DDIINDEXDB", p = pwd)
-    if(!exists('file'))
-    {
-      file <- add_filedscr(ask = T)
-    }
-  
-    load2ddiindex_file(conn = ch, file)
-    
-  
-#+end_src
-*** R-load2ddiindex_file
-#+name:load2ddiindex_file
-#+begin_src R :session *R* :tangle R/load2ddiindex_file.r :exports none :eval no
-################################################################
-# name:load2ddiindex_file
-  
-  load2ddiindex_file <- function(conn=NA, filedscr)
-  {
-  
-  
-  
-    if(exists('filedscr'))
-      {
-      fileexists <- dbGetQuery(conn,
-                  paste("select * from filedscr where filename = '",filedscr$FILENAME,"' and filelocation ='",filedscr$FILELOCATION,"'", sep="")
-                  )
-      if(nrow(fileexists) > 0) stop('File record already exists.')
-      
-    dbSendUpdate(ch,
-    # cat(
-      paste('
-      insert into FILEDSCR (',paste(names(filedscr), sep = '', collapse = ', '),')
-      VALUES (',paste("'",paste(gsub("'","",ifelse(is.na(filedscr),'',filedscr)),sep='',collapse="', '"),"'",sep=''),')',sep='')
-    )
-  
-      }
-  }
-
-#+end_src
-*** man-load2ddiindex_file
-#+name:load2ddiindex_file
-#+begin_src R :session *R* :tangle man/load2ddiindex_file.Rd :exports none :eval no
-################################################################
-# name:load2ddiindex_file
-
-#+end_src
-
-
-
-** add_datadscr
-*** test-add_datadscr
-#+name:test-add_datadscr
-#+begin_src R :session *R* :tangle tests/test-add_datadscr.r :exports none :eval no
-  ################################################################
-  # name:test-add_datadscr
-  source("R/add_datadscr.r")
-  require(swishdbtools)
-  if(!exists('p'))
-  {
-    p <- getPassword()
-  }
-  ewedb <- connect2postgres('localhost', db='django',
-                         user='gislibrary', p=p)
-  pwd <- getPassword(remote=T)
-  ch <- connect2oracle('115.146.93.225', db="DDIINDEXDB", p = pwd)
-  # for files that are already loaded on ewedb
-  airquality <- sql_subset(ewedb, 'airquality', limit = 1, eval = T)
-  airquality
-  # else load the file from CSV or similar
-  baseball <- read.csv('baseball.csv')
-  # now add variable labels
-  datadscr <- add_datadscr(data_frame = airquality, fileid = 1, ask=T)
-  datadscr <- add_datadscr(data_frame = baseball, ask=T)
-  
-#+end_src
-
-*** R-add_datadscr
-#+name:add_datadscr
-#+begin_src R :session *R* :tangle R/add_datadscr.r :exports none :eval no
-  ################################################################
-  # name:add_datadscr
-  add_datadscr <- function(data_frame, fileid = NA,notes=NA,specperm=F,ask=F){
-  
-  
-    labls=names(data_frame)
-    datadscr=as.data.frame(matrix(nrow=length(labls),ncol=4, byrow=TRUE))
-    names(datadscr)=c('LABL','NOTES','SPECPERMVAR', 'FILEID')
-    datadscr$LABL=labls
-    if( !is.na(notes) ){ stopifnot(length(notes) == length(labls))}
-    
-    if(!is.na(notes[1])) {
-      datadscr$NOTES=notes
-    } else if(ask==F){
-      datadscr$NOTES=rep('',length(labls))
-    } else {
-      for(i in 1:length(labls) ){
-        #if element is null then
-        labl=labls[i]
-        datadscr[i,1]=labl
-        datadscr[i,2]=readline(paste("enter descriptions for the ",labl,": "))
-        if(specperm==T) datadscr[i,3]=readline(paste("special permissions for ",labl,": "))
-      }
-    }
-    datadscr$FILEID=fileid
-    # cat(paste("write.table(f,'metadata/{study}_ddi_filedscr.csv',sep=',',row.names=F)
-    #           # OR
-    #           write.table(f,'metadata/{study}_ddi_filedscr.csv',sep=',',row.names=F, append=T, col.names=F)
-    #           ",sep=''))
-  
-    return(datadscr)
-    
-  }
-  
-  
-#+end_src
-
-** load2ddiindex_data
-*** test-load2ddiindex_data
-#+name:load2ddiindex_data
-#+begin_src R :session *R* :tangle tests/test-load2ddiindex_data.r :exports none :eval no
-  ################################################################
-  # name:load2ddiindex_data
-  source('R/load2ddiindex_data.r')
-  require(swishdbtools)
-  
-  p <- getPassword()
-  ch <- connect2oracle('115.146.93.225', db='DDIINDEXDB', p=p)
-  load2ddiindex_data(ch, filepath = "public.baseball", datadscr)
-#+end_src
-*** R-load2ddiindex_data
-#+name:load2ddiindex_data
-#+begin_src R :session *R* :tangle R/load2ddiindex_data.r :exports none :eval no
-  ################################################################
-  # name:load2ddiindex_data
-  
-  load2ddiindex_data <- function(conn, filepath, datadscr)
-   {
-     if(length(grep("\\.",filepath)) == 0)
-      {
-        schema <- "public"
-        table <- filepath
-      } else {
-        schema <- strsplit(filepath, "\\.")[[1]][1]
-        table <- strsplit(filepath, "\\.")[[1]][2]
-      }
-
-  sql <- sql_subset(ch, 'ddiindexdb.filedscr',
-                    subset = paste("filelocation = '",schema,"' and filename = '",table,"'", sep =""),
-                    eval=F, check =F)
-  #cat(sql)
-  file <- dbGetQuery(ch, sql)
-  fid <- file$FILEID
-  #fid
-  datadscr$FILEID <- fid
-  for(i in 1:nrow(datadscr))
-    {
-    dbSendUpdate(ch,
-      paste('
-      insert into DATADSCR (',paste(names(datadscr), sep = '', collapse = ', '),')
-      VALUES (',paste("'",paste(gsub("'","",ifelse(is.na(datadscr[i,]),'',datadscr[i,])),sep='',collapse="', '"),"'",sep=''),')',sep='')
-     )
-  
-    }
-  }
-  
-#+end_src
-*** man-load2ddiindex_data
-#+name:load2ddiindex_data
-#+begin_src R :session *R* :tangle man/load2ddiindex_data.Rd :exports none :eval no
-################################################################
-# name:load2ddiindex_data
-
-#+end_src
-
-** ddiindexdb_remove_file
-*** test-ddiindexdb_remove_file
-#+name:ddiindexdb_remove_file
-#+begin_src R :session *R* :tangle tests/test-ddiindexdb_remove_file.r :exports none :eval no
-  ################################################################
-  # name:ddiindexdb_remove_file
-  require(swishdbtools)
-  source("R/ddiindexdb_remove_file.r")
-  p <- getPassword()
-  ddiindexdb <- connect2oracle('115.146.93.225', 'ddiindexdb', p = p)
-  ddiindexdb_remove_file(ddiindexdb, x = "public.baseball")
-  
-#+end_src
-*** R-ddiindexdb_remove_file
-#+name:ddiindexdb_remove_file
-#+begin_src R :session *R* :tangle R/ddiindexdb_remove_file.r :exports none :eval no
-    ################################################################
-    # name:ddiindexdb_remove_file
-  
-    ddiindexdb_remove_file <- function(conn, x)
-    {
-    if(length(grep("\\.",x)) == 0)
-      {
-        schema <- "public"
-        table <- x
-      } else {
-        schema <- strsplit(x, "\\.")[[1]][1]
-        table <- strsplit(x, "\\.")[[1]][2]
-      }
-  
-    fid <- dbGetQuery(ch,
-                paste("delete from ddiindexdb.filedscr where filelocation = '",schema,"'  and filename = '",table,"'", sep ="")
-                     )
-  #  fid
-  
-    dbSendUpdate(ch,
-                paste("delete from ddiindexdb.datadscr where fileid = ",
-                fid[1,1], sep ="")
-                )
-  
-    dbSendUpdate(ch,
-                paste("delete from ddiindexdb.filedscr where filelocation = '",schema,"'  and filename = '",table,"'", sep ="")
-                )
-    }
-  
-#+end_src
-*** man-ddiindexdb_remove_file
-#+name:ddiindexdb_remove_file
-#+begin_src R :session *R* :tangle man/ddiindexdb_remove_file.Rd :exports none :eval no
-################################################################
-# name:ddiindexdb_remove_file
 
 #+end_src
 
@@ -1474,3 +1386,330 @@ sql <- sql_subset(conn=ch, x='spatial_ref_sys',
   }
   
 #+end_src
+** pgListTables
+*** test-pgListTables
+#+name:pgListTables
+#+begin_src R :session *R* :tangle tests/test-pgListTables.r :exports none :eval no
+ch <- connect2postgres(h = '115.146.84.135', db = 'ewedb', user= 'gislibrary', p='gislibrary')
+test_that('lists postgis table', {
+  expect_that(nrow(pgListTables(conn=ch, schema='public', pattern='spatial_ref_sys')) == 1, is_true())
+})
+
+
+# dev tests
+# tbls <- pgListTables(conn=ch, schema='public', pattern='spatial_ref_sys')
+# nrow(tbls) == 1
+# 
+# tbls <- pgListTables(conn=ch, schema='awap_grids', pattern='maxave')
+# nrow(tbls)
+# tbls
+# pgListTables(conn=ch, schema='public', pattern='dbsize')
+# tables <- dbGetQuery(ch, 'select   c.relname, nspname, c.relkind
+#                        FROM pg_catalog.pg_class c
+#                        LEFT JOIN pg_catalog.pg_namespace n
+#                      ON n.oid = c.relnamespace
+#                      where c.relkind IN (\'r\',\'\', \'v\') ')
+# 
+# table(tables$relkind)
+# # S     c     i     r     t     v 
+# # 20509    11 61649 20609 20527   109 
+#+end_src
+*** R-pgListTables
+#+name:pgListTables
+#+begin_src R :session *R* :tangle R/pgListTables.r :exports none :eval no
+
+################################################################
+# name:pgListTables
+pgListTables <- function(conn, schema, pattern = NA)
+{
+  tables <- dbGetQuery(conn, "select   c.relname, nspname
+                       FROM pg_catalog.pg_class c
+                       LEFT JOIN pg_catalog.pg_namespace n
+                       ON n.oid = c.relnamespace
+                       where c.relkind IN ('r','','v') ")
+  tables <- tables[grep(schema,tables$nspname),]
+  if(!is.na(pattern)) tables <- tables[grep(pattern, tables$relname),]
+  tables <- tables[order(tables$relname),]
+  return(tables)
+}
+
+#+end_src
+*** man-pgListTables
+#+name:pgListTables
+#+begin_src R :session *R* :tangle no :exports none :eval no
+################################################################
+# name:pgListTables
+
+#+end_src
+
+** DEPRECATED sql_insert
+** sql_subset_into
+*** test-sql_subset_into
+#+name:test-sql_subset_into
+#+begin_src R :session *R* :tangle tests/test-sql_subset_into.r :exports none :eval no
+  source("R/connect2postgres.r")
+  source("R/sql_subset.r")
+  source("R/sql_subset_into.r")
+  source("R/pgListTables.r")
+  
+  ch <- connect2postgres('115.146.84.135', db='ewedb', user='gislibrary', p='gislibrary')
+  sql_subset_into(ch, 'dbsize',into_table='temp101', select = '*', eval=T)
+  sql_subset(ch, 'temp101', eval = T)
+  dbSendQuery(ch, 'drop table temp101')
+  
+#+end_src
+
+
+*** R-sql_subset_into
+#+name:sql_subset_into
+#+begin_src R :session *R* :tangle R/sql_subset_into.r :exports none :eval no
+  sql_subset_into <- function(conn, x, ..., into_schema = "public", into_table, eval = FALSE, drop = TRUE)
+  {
+    sql <- sql_subset(ch, x=x, ..., eval=F)
+    sql <- gsub('from', paste("into ", into_schema, ".", into_table, "\nfrom ", sep = ""), sql)
+    if(eval)
+    {
+      exists <- pgListTables(conn, into_schema, into_table)
+      if(nrow(exists) > 0 & drop)
+        {
+          dbSendQuery(conn, paste("drop table ", into_schema, ".",
+                                  into_table, sep =""))
+        } else if (nrow(exists) > 0 & !drop)
+          {
+            stop("Table exists. Aborting.")
+          }
+    
+      dbSendQuery(conn, sql)
+      #dat <- dbGetQuery(conn, paste("select * from ", into_schema, ".", into_table, sep = ""))
+      #return(dat)
+    } else {
+      return(sql)
+    }
+  }
+    
+#+end_src
+
+** sql_subset
+*** test-sql_subset.r
+#+name:test-sql_subset.r
+#+begin_src R :session *R* :tangle tests/test-sql_subset.r :exports none :eval no
+  
+  ## install.packages("~/tools/swishdbtools_1.1_R_x86_64-pc-linux-gnu.tar.gz", repos = NULL, type = "source")
+  require(swishdbtools)
+  ##  ch <- connect2postgres('localhost', db='django', user='gislibrary', p='gislibrary')
+  ## test_that('postgis data exists', {
+  ##   expect_that(is.character(sqlquery_select(conn=ch, select='srid, srtext',x='spatial_ref_sys', limit = 2, subset = "srid = 4283", eval = F)), is_true())
+  ##   expect_that(nrow(sqlquery_select(conn=ch, select='srid, srtext',x='spatial_ref_sys', limit = 2, subset = "srid = 4283", eval = T))==1, is_true())
+  ## })
+  
+  #
+  # dev tests
+  source("R/sql_subset.r")
+  source("R/pgListTables.r")
+  if(!exists('p'))
+  {
+    p <- getPassword()
+  }
+   ewedb <- connect2postgres('115.146.84.135', db='ewedb', user='gislibrary', p=p)
+   sql <- sql_subset(conn=ewedb, x='public.spatial_ref_sys',
+                     subset = "srid = 4283", select='srid, srtext',
+                     limit = 2, eval = T, check = T)
+  ## cat(sql) # if eval=F
+   nrow(sql)==1 # if eval=T
+  
+  #sql_subset(ewedb, 'airquality', 'Temp > 80', 'Ozone, Temp', eval = T,
+  #           limit = 6)
+  sql_subset(ewedb, 'dbsize', select = '*', eval=T)
+  dbSendQuery(ewedb, 'drop table temp101')
+  sql_subset(ewedb, 'dbsize', select = '*', eval=T)
+  
+#+end_src
+*** R-sql_subset.r
+#+name:sql_subset
+#+begin_src R :session *R* :tangle R/sql_subset.r :exports none :eval no
+  ################################################################
+  # name:sqlquery_select
+  
+  sql_subset <- function(conn, x, subset = NA, select = "*",
+                              limit = -1, eval = FALSE, check = T)
+  {
+    # assume ch exists
+    if(length(grep("\\.",x)) == 0)
+      {
+        schema <- "public"
+        table <- x
+      } else {
+        schema <- strsplit(x, "\\.")[[1]][1]
+        table <- strsplit(x, "\\.")[[1]][2]
+      }
+  
+  
+    if(check)
+      {
+      exists <- pgListTables(conn, schema, table)
+      if(nrow(exists) == 0)
+      {
+        stop("Table doesn't exist.")
+      }
+  
+      }
+  
+  
+    if(check & select=="*")
+      {
+        select <- names(
+                       dbGetQuery(conn,
+                        paste("select ", select, " from ",
+                        schema, ".",
+                        table, " limit 1",
+                        sep = ""))
+                       )
+        select <- paste(select, collapse = ", ", sep = "")
+      } 
+
+    sqlquery <- paste("select ", select, "\nfrom ", schema, ".",
+                      table, "\n",
+                      sep = "")
+  
+    if(!is.na(subset))
+      {
+        sqlquery <- paste(sqlquery, "where ", subset, "\n", sep = "")
+      }
+  
+    if(limit > 0)
+      {
+        sqlquery <- paste(sqlquery, "limit ", limit, "\n", sep = "")
+      }
+  
+    if(eval)
+      {
+        dat <- dbGetQuery(conn,sqlquery)
+        return(dat)
+      } else {
+        return(sqlquery)
+      }
+  
+  }
+  
+#+end_src
+
+*** man-sql_subset.Rd
+#+name:sql_subset
+#+begin_src R :session *R* :tangle man/sql_subset.Rd :exports none :eval no
+\name{sql_subset}
+\alias{sql_subset}
+%- Also NEED an '\alias' for EACH other topic documented here.
+\title{
+sql_subset
+}
+\description{
+Constructs an SQL query for a postgres database. Modelled on the base R function 'subset'.
+}
+\usage{
+sql_subset(conn, x, subset, select, schema, limit, eval)
+}
+%- maybe also 'usage' for other objects documented here.
+\arguments{
+  \item{conn}{
+%%     ~~Describe \code{remote} here~~
+database connection
+}
+ \item{x}{
+%%     ~~Describe \code{remote} here~~
+the table name
+}
+ \item{subset}{
+%%     ~~Describe \code{remote} here~~
+the SQL 'where' statement
+}
+ \item{select}{
+%%     ~~Describe \code{remote} here~~
+which variables to include
+}
+ \item{schema}{
+%%     ~~Describe \code{remote} here~~
+the schema that has the table in it
+}
+ \item{limit}{
+%%     ~~Describe \code{remote} here~~
+limit, often useful for debugging
+}
+ \item{eval}{
+%%     ~~Describe \code{remote} here~~
+evaluate the query on the database?
+}
+}
+\details{
+%%  ~~ If necessary, more details than the description above ~~
+}
+\value{
+%%  ~Describe the value returned
+%%  If it is a LIST, use
+%%  \item{comp1 }{Description of 'comp1'}
+%%  \item{comp2 }{Description of 'comp2'}
+%% ...
+}
+\references{
+%% ~put references to the literature/web site here ~
+}
+\author{
+ivanhanigan
+}
+\note{
+%%  ~~further notes~~
+}
+
+%% ~Make other sections like Warning with \section{Warning }{....} ~
+
+\seealso{
+%% ~~objects to See Also as \code{\link{help}}, ~~~
+}
+\examples{
+ch <- connect2postgres('115.146.84.135', db='ewedb',
+                       user='gislibrary', p='gislibrary')
+sql <- sql_subset(conn=ch, x='spatial_ref_sys',
+                  subset = "srid = 4283", select='srid, srtext',
+                  limit = 2, eval = T)
+  
+  
+}
+% Add one or more standard keywords, see file 'KEYWORDS' in the
+% R documentation directory.
+\keyword{ ~kwd1 }
+\keyword{ ~kwd2 }% __ONLY ONE__ keyword per line
+
+#+end_src
+
+** sql_summarise
+*** test-sql_summarise
+#+name:sql_summarise
+#+begin_src R :session *R* :tangle tests/test-sql_summarise.r :exports none :eval no
+  ################################################################
+  # name:sql_summarise
+  require(plyr)
+  summarise(baseball,
+   duration = max(year) - min(year),
+   nteams = length(unique(team)))
+  head(baseball)
+  head(
+  ddply(baseball, "id", summarise,
+   duration = max(year) - min(year),
+   nteams = length(unique(team)))
+  )
+  
+#+end_src
+*** R-sql_summarise
+#+name:sql_summarise
+#+begin_src R :session *R* :tangle R/sql_summarise.r :exports none :eval no
+################################################################
+# name:sql_summarise
+
+#+end_src
+*** man-sql_summarise
+#+name:sql_summarise
+#+begin_src R :session *R* :tangle man/sql_summarise.Rd :exports none :eval no
+################################################################
+# name:sql_summarise
+
+#+end_src
+
