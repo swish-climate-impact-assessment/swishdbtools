@@ -7,6 +7,48 @@
 -----
 
 * Introduction
+#+name:swishdbtools-package
+#+begin_src R :session *R* :tangle man/swishdbtools-package.Rd :exports none :eval no
+\name{swishdbtools-package}
+\alias{swishdbtools-package}
+\alias{swishdbtools}
+\docType{package}
+\title{
+getPassword and connect2postgres
+}
+\description{
+getPassword and connect2postgres~
+}
+\details{
+\tabular{ll}{
+Package: \tab swishdbtools\cr
+Type: \tab Package\cr
+Version: \tab 1.0\cr
+Date: \tab 2012-12-13\cr
+License: \tab What license is it under?\cr
+}
+~~ An overview of how to use the package, including the most important functions ~~
+}
+\author{
+Who wrote it
+
+Maintainer: Who to complain to <ivan.hanigan@gmail.com>
+
+}
+\references{
+
+}
+\keyword{ package }
+\seealso{
+~~ Optional links to other man pages, e.g. ~~
+~~ \code{\link[<pkg>:<pkg>-package]{<pkg>}} ~~
+}
+\examples{
+~~ simple examples of the most important functions ~~
+}
+
+#+end_src
+
 * functions
 ** add_datadscr
 *** test-add_datadscr
@@ -278,9 +320,81 @@ connect2oracle <- function(hostip=NA, db=NA, p=NA,
 #+end_src
 *** man-connect2oracle
 #+name:connect2oracle
-#+begin_src R :session *R* :tangle no :exports none :eval no
-################################################################
-# name:connect2oracle
+#+begin_src R :session *R* :tangle man/connect2oracle.Rd :exports none :eval no
+\name{connect2oracle}
+\alias{connect2oracle}
+%- Also NEED an '\alias' for EACH other topic documented here.
+\title{
+connect to a oracle db
+}
+\description{
+connect to a oracle db
+}
+\usage{
+connect2oracle(hostip=NA, db=NA, p=NA, driverlocation='/lib/ojdbc6.jar')
+}
+%- maybe also 'usage' for other objects documented here.
+\arguments{
+
+  \item{hostip}{
+IP address as string
+}
+  \item{db}{
+Database (Workspace) name 
+}
+  \item{p}{
+password 
+}
+  \item{driverlocation}{
+defaults to linux location.  not tested on windoze.
+}
+
+}
+
+\details{
+%%  ~~ If necessary, more details than the description above ~~
+}
+\value{
+%%  ~Describe the value returned
+%%  If it is a LIST, use
+%%  \item{comp1 }{Description of 'comp1'}
+%%  \item{comp2 }{Description of 'comp2'}
+%% ...
+}
+\references{
+%% ~put references to the literature/web site here ~
+}
+\author{
+ivanhanigan
+}
+\note{
+make sure you have JDK, if not install the SUN version
+http://blog.i-evaluation.com/2012/12/03/installing-java-sdk-and-jre-bin-files-on-my-ec2-instance/
+then get the JDBC driver from http://www.oracle.com/technetwork/database/enterprise-edition/jdbc-112010-090769.html
+put into /lib
+did install.packages('rJava') and then
+"R CMD javareconf" as root
+}
+
+%% ~Make other sections like Warning with \section{Warning }{....} ~
+
+\seealso{
+%% ~~objects to See Also as \code{\link{help}}, ~~~
+}
+\examples{
+# example using the SWISH Extreme Weather Eventds DataBase (EWEDB).
+# NB only powerusers will know the password.
+ch <- connect2oracle(hostip = '115.146.93.225', db = 'DDIINDEXDB')
+stdydscr <- dbGetQuery(ch, "select * from stdydscr where IDNO = 'EWEDB'")
+t(stdydscr)
+
+
+
+}
+% Add one or more standard keywords, see file 'KEYWORDS' in the
+% R documentation directory.
+\keyword{ ~kwd1 }
+\keyword{ ~kwd2 }% __ONLY ONE__ keyword per line
 
 #+end_src
 
@@ -337,9 +451,120 @@ connect2postgres <- function(hostip=NA,db=NA,user=NA, p=NA, os = 'linux', pgutil
 #+end_src
 *** man-connect2postgres
 #+name:connect2postgres
-#+begin_src R :session *R* :tangle no :exports none :eval no
-################################################################
-# name:connect2postgres
+#+begin_src R :session *R* :tangle man/connect2postgres.Rd :exports none :eval no
+\name{connect2postgres}
+\alias{connect2postgres}
+%- Also NEED an '\alias' for EACH other topic documented here.
+\title{
+connect to a postgres db
+}
+\description{
+connect to a postgres db
+}
+\usage{
+connect2postgres(hostip = NA, db = NA, user = NA, p = NA, os = "linux", pgutils = c("/home/ivan/tools/jdbc", "c:/pgutils"))
+}
+%- maybe also 'usage' for other objects documented here.
+\arguments{
+  \item{hostip}{
+%%     ~~Describe \code{hostip} here~~
+}
+  \item{db}{
+%%     ~~Describe \code{db} here~~
+}
+  \item{user}{
+%%     ~~Describe \code{user} here~~
+}
+  \item{p}{
+%%     ~~Describe \code{p} here~~
+}
+  \item{os}{
+%%     ~~Describe \code{os} here~~
+}
+  \item{pgutils}{
+%%     ~~Describe \code{pgutils} here~~
+}
+}
+\details{
+%%  ~~ If necessary, more details than the description above ~~
+}
+\value{
+%%  ~Describe the value returned
+%%  If it is a LIST, use
+%%  \item{comp1 }{Description of 'comp1'}
+%%  \item{comp2 }{Description of 'comp2'}
+%% ...
+}
+\references{
+%% ~put references to the literature/web site here ~
+}
+\author{
+ivanhanigan
+}
+\note{
+%%  ~~further notes~~
+}
+
+%% ~Make other sections like Warning with \section{Warning }{....} ~
+
+\seealso{
+%% ~~objects to See Also as \code{\link{help}}, ~~~
+}
+\examples{
+##---- Should be DIRECTLY executable !! ----
+##-- ==>  Define data, use random,
+##--	or do  help(data=index)  for the standard data sets.
+
+## The function is currently defined as
+function (hostip = NA, db = NA, user = NA, p = NA, os = "linux", 
+    pgutils = c("/home/ivan/tools/jdbc", "c:/pgutils")) 
+{
+    if (is.na(hostip)) {
+        hostip = readline("enter hostip: ")
+    }
+    if (is.na(db)) {
+        db = readline("enter db: ")
+    }
+    if (is.na(user)) {
+        user = readline("enter user: ")
+    }
+    if (is.na(p)) {
+        pwd = readline(paste("enter password for user ", user, 
+            ": ", sep = ""))
+    }
+    else {
+        pwd <- p
+    }
+    if (os == "linux") {
+        if (!require(RPostgreSQL)) 
+            install.packages("RPostgreSQL", repos = "http://cran.csiro.au")
+        require(RPostgreSQL)
+        con <- dbConnect(PostgreSQL(), host = hostip, user = user, 
+            password = pwd, dbname = db)
+    }
+    else {
+        if (!require(RJDBC)) 
+            install.packages("RJDBC")
+        require(RJDBC)
+        if (!file.exists(file.path(pgutils, "postgresql-8.4-701.jdbc4.jar"))) {
+            dir.create(pgutils, recursive = T)
+            download.file("http://jdbc.postgresql.org/download/postgresql-8.4-701.jdbc4.jar", 
+                file.path(pgutils, "postgresql-8.4-701.jdbc4.jar"), 
+                mode = "wb")
+        }
+        pgsql <- JDBC("org.postgresql.Driver", file.path(pgutils, 
+            "postgresql-8.4-701.jdbc4.jar"))
+        con <- dbConnect(pgsql, paste("jdbc:postgresql://", hostip, 
+            "/", db, sep = ""), user = user, password = pwd)
+    }
+    rm(pwd)
+    return(con)
+  }
+}
+% Add one or more standard keywords, see file 'KEYWORDS' in the
+% R documentation directory.
+\keyword{ ~kwd1 }
+\keyword{ ~kwd2 }% __ONLY ONE__ keyword per line
 
 #+end_src
 
@@ -452,7 +677,7 @@ connect2postgres <- function(hostip=NA,db=NA,user=NA, p=NA, os = 'linux', pgutil
 #+end_src
 *** man-ddiindexdb_remove_file
 #+name:ddiindexdb_remove_file
-#+begin_src R :session *R* :tangle man/ddiindexdb_remove_file.Rd :exports none :eval no
+#+begin_src R :session *R* :tangle no :exports none :eval no
 ################################################################
 # name:ddiindexdb_remove_file
 
@@ -527,10 +752,79 @@ getPassword <- function(remote = F){
 #+end_src
 *** man-getPassword
 #+name:getPassword
-#+begin_src R :session *R* :tangle no :exports none :eval no
-################################################################
-# name:getPassword
+#+begin_src R :session *R* :tangle man/getPassword.Rd :exports none :eval no
+\name{getPassword}
+\alias{getPassword}
+%- Also NEED an '\alias' for EACH other topic documented here.
+\title{
+getPassword
+}
+\description{
+getPassword
+}
+\usage{
+getPassword(remote = F)
+}
+%- maybe also 'usage' for other objects documented here.
+\arguments{
+  \item{remote}{
+%%     ~~Describe \code{remote} here~~
+}
+}
+\details{
+%%  ~~ If necessary, more details than the description above ~~
+}
+\value{
+%%  ~Describe the value returned
+%%  If it is a LIST, use
+%%  \item{comp1 }{Description of 'comp1'}
+%%  \item{comp2 }{Description of 'comp2'}
+%% ...
+}
+\references{
+%% ~put references to the literature/web site here ~
+}
+\author{
+ivanhanigan
+}
+\note{
+%%  ~~further notes~~
+}
 
+%% ~Make other sections like Warning with \section{Warning }{....} ~
+
+\seealso{
+%% ~~objects to See Also as \code{\link{help}}, ~~~
+}
+\examples{
+##---- Should be DIRECTLY executable !! ----
+##-- ==>  Define data, use random,
+##--	or do  help(data=index)  for the standard data sets.
+
+## The function is currently defined as
+function (remote = F) 
+{
+    if (remote == F) {
+        require(tcltk)
+        tt <- tktoplevel()
+        pass = tclVar("")
+        label.widget <- tklabel(tt, text = "Enter Password")
+        password.widget <- tkentry(tt, show = "*", textvariable = pass)
+        ok <- tkbutton(tt, text = "Ok", command = function() tkdestroy(tt))
+        tkpack(label.widget, password.widget, ok)
+        tkwait.window(tt)
+        return(tclvalue(pass))
+    }
+    else {
+        pass <- readline("Type your password into the console: ")
+        return(pass)
+    }
+  }
+}
+% Add one or more standard keywords, see file 'KEYWORDS' in the
+% R documentation directory.
+\keyword{ ~kwd1 }
+\keyword{ ~kwd2 }% __ONLY ONE__ keyword per line
 #+end_src
 
 ** get_passwordTable
@@ -766,7 +1060,7 @@ LinuxOperatingSystem <- function()
 #+end_src
 *** man-load2ddiindex_data
 #+name:load2ddiindex_data
-#+begin_src R :session *R* :tangle man/load2ddiindex_data.Rd :exports none :eval no
+#+begin_src R :session *R* :tangle no :exports none :eval no
 ################################################################
 # name:load2ddiindex_data
 
@@ -825,7 +1119,7 @@ LinuxOperatingSystem <- function()
 #+end_src
 *** man-load2ddiindex_file
 #+name:load2ddiindex_file
-#+begin_src R :session *R* :tangle man/load2ddiindex_file.Rd :exports none :eval no
+#+begin_src R :session *R* :tangle no :exports none :eval no
 ################################################################
 # name:load2ddiindex_file
 
@@ -1949,7 +2243,7 @@ sql <- sql_subset(conn=ch, x='spatial_ref_sys',
 #+end_src
 *** man-sql_summarise
 #+name:sql_summarise
-#+begin_src R :session *R* :tangle man/sql_summarise.Rd :exports none :eval no
+#+begin_src R :session *R* :tangle no :exports none :eval no
 ################################################################
 # name:sql_summarise
 
