@@ -343,6 +343,55 @@ connect2postgres <- function(hostip=NA,db=NA,user=NA, p=NA, os = 'linux', pgutil
 
 #+end_src
 
+** connect2postgres2
+*** test-connect2postgres2
+#+name:connect2postgres2
+#+begin_src R :session *R* :tangle tests/test-connect2postgres2.r :exports none :eval no
+  ################################################################
+  # name:connect2postgres2
+    source("R/LinuxOperatingSystem.r")
+    source("R/get_pgpass.r")
+    source("R/connect2postgres.r")
+    source("R/connect2postgres2.r")
+  
+  #  debug(connect2postgres2)
+    ch <- connect2postgres2("ewedb", "115.146.84.135", "ivan_hanigan")
+    dbGetQuery(ch, 'select * from dbsize')
+    ch <- connect2postgres2("ewedb")
+    dbGetQuery(ch, 'select * from dbsize')
+#+end_src
+*** R-connect2postgres2
+#+name:connect2postgres2
+#+begin_src R :session *R* :tangle R/connect2postgres2.r :exports none :eval no
+  ################################################################
+  # name:connect2postgres2
+  connect2postgres2 <- function(database, host=NA, user = NA)
+  {
+  if(!require(fgui)) install.packages("fgui", repos='http://cran.csiro.au'); require(fgui)
+  if(is.na(host) | is.na(user))
+    {
+     pgpass <- guiv(get_pgpass,
+                    argOption=list(savePassword=c("TRUE","FALSE")))
+     ch <- connect2postgres(hostip = pgpass[1], db=database,
+                            user=pgpass[4], p = pgpass[5])
+    } else {
+     pgpass <- get_pgpass(host = host, user = user)
+     ch <- connect2postgres(hostip = host, db=database,
+                            user=user, p = pgpass[5])
+    }
+  
+     return(ch)
+  }
+  
+#+end_src
+*** man-connect2postgres2
+#+name:connect2postgres2
+#+begin_src R :session *R* :tangle no :exports none :eval no
+################################################################
+# name:connect2postgres2
+
+#+end_src
+
 ** ddiindexdb_remove_file
 *** test-ddiindexdb_remove_file
 #+name:ddiindexdb_remove_file
@@ -469,6 +518,141 @@ getPassword <- function(remote = F){
 #+begin_src R :session *R* :tangle no :exports none :eval no
 ################################################################
 # name:getPassword
+
+#+end_src
+
+** get_pgpass
+*** test-get_pgpass
+#+name:get_pgpass
+#+begin_src R :session *R* :tangle tests/test-get_pgpass.r :exports none :eval no
+  ################################################################
+  # name:get_pgpass
+  source("R/LinuxOperatingSystem.r")
+  source("R/get_pgpass.r")
+  source("R/connect2postgres.r")
+  source("R/connect2postgres2.r")
+  
+  #undebug(get_pgpass)
+  pgpass <- get_pgpass(host="115.146.84.135", user="ivan_hanigan", savePassword = TRUE)
+  pgpass
+  
+  ch <- connect2postgres2()
+  pgpass
+  
+#+end_src
+*** R-get_pgpass
+#+name:get_pgpass
+#+begin_src R :session *R* :tangle R/get_pgpass.r :exports none :eval no
+    ################################################################
+    # name:get_pgpass
+    get_pgpass <- function(host, user, savePassword = FALSE)
+    {
+  
+      linux = LinuxOperatingSystem()
+      if(linux)
+      {
+        fileName <- "~/.pgpass"
+      } else
+      {
+        directory <- Sys.getenv("APPDATA")
+        fileName <- file.path(directory, "postgresql", "pgpass.conf")
+      }
+  
+      exists <- file.exists(fileName)
+      if (exists)
+      {
+        passwordTable <- read.table(fileName, sep = ":", stringsAsFactors=FALSE)
+  
+        hostColumn <- 1
+        userColumn <- 4
+        passwordColumn <- 5
+  
+        recordIndex <- which(passwordTable[,hostColumn] == host & passwordTable[,userColumn] == user)
+  
+        if (length(recordIndex > 0) > 0)
+        {
+          pgpass <- passwordTable[recordIndex, ]
+          pgpass <- as.character(pgpass)
+          return (pgpass)
+        }
+      }
+  
+      pgpass <- swishdbtools::getPassword()
+  
+      #TODO get user ok here, also on linux need to add
+  "WARNING: You have opted to save your password. It will be stored in plain text in your project files and in your home directory on Unix-like systems, or in your user profile on Windows. If you do not want this to happen, please press the Cancel button."
+  
+      #savePassword = TRUE
+  
+      if (savePassword)
+      {
+        record <- c(V1 = host, V2 = "5432", V3 = "*", V4 = user, V5 = pgpass)
+        #record <- paste(host, ":5432:*:",  user,":",  pgpass, collapse = "", sep = "")
+        record <- t(record)
+        if (!exists("passwordTable"))
+        {
+          passwordTable <- as.data.frame(record)
+        }else
+        {
+          passwordTable = rbind(passwordTable, record)
+        }
+  
+        write.table(x = passwordTable, file = fileName, sep = ":", eol =
+      "\r\n", row.names = FALSE, col.names = FALSE, quote = FALSE)
+      }
+  
+      return (pgpass)
+    }
+  
+#+end_src
+*** man-get_pgpass
+#+name:get_pgpass
+#+begin_src R :session *R* :tangle no :exports none :eval no
+################################################################
+# name:get_pgpass
+
+#+end_src
+
+** LinuxOperatingSystem
+*** test-LinuxOperatingSystem
+#+name:LinuxOperatingSystem
+#+begin_src R :session *R* :tangle tests/test-LinuxOperatingSystem.r :exports none :eval no
+################################################################
+# name:LinuxOperatingSystem
+
+#+end_src
+*** R-LinuxOperatingSystem
+#+name:LinuxOperatingSystem
+#+begin_src R :session *R* :tangle R/LinuxOperatingSystem.r :exports none :eval no
+################################################################
+# name:LinuxOperatingSystem
+LinuxOperatingSystem <- function()
+{
+  if(length(grep('linux',sessionInfo()[[1]]$os)) == 1)
+  {
+    #print('Linux')
+    os <- 'linux' 
+    OsLinux <- TRUE
+  }else if (length(grep('ming',sessionInfo()[[1]]$os)) == 1)
+  {
+    #print('Windows')
+    os <- 'windows'
+    OsLinux <- FALSE
+  }else
+  {
+    # don't know, do more tests
+    print('Non linux or windows os detected. Assume linux-alike.')
+    os <- 'linux?'
+  }
+ 
+  return (OsLinux)
+}
+#+end_src
+*** man-LinuxOperatingSystem
+#+name:LinuxOperatingSystem
+#+begin_src R :session *R* :tangle no :exports none :eval no
+################################################################
+# name:LinuxOperatingSystem
 
 #+end_src
 
