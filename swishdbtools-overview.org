@@ -925,10 +925,11 @@ function (remote = F)
           pwd <- passwordTable[recordIndex, passwordColumn]
           pwd <- as.character(pwd)
   
-        }
-      } else {
+        
+        } else {
   
-        pwd <- swishdbtools::getPassword()
+          pwd <- swishdbtools::getPassword()
+        }
       }
         record <- c(V1 = host, V2 = "5432", V3 = database, V4 = user, V5 = pwd)
         #record <- paste(host, ":5432:*:",  user,":",  pgpass, collapse = "", sep = "")
@@ -1091,31 +1092,33 @@ LinuxOperatingSystem <- function()
 *** R-load2ddiindex_file
 #+name:load2ddiindex_file
 #+begin_src R :session *R* :tangle R/load2ddiindex_file.r :exports none :eval no
-################################################################
-# name:load2ddiindex_file
+  ################################################################
+  # name:load2ddiindex_file
+    
+    load2ddiindex_file <- function(conn=NA, filedscr)
+    {
+    
+    
+    
+      if(exists('filedscr'))
+        {
+        fileexists <- dbGetQuery(conn,
+                    paste("select * from filedscr where filename = '",filedscr$FILENAME,"' and filelocation ='",filedscr$FILELOCATION,"'", sep="")
+                    )
+        if(nrow(fileexists) > 0) stop('File record already exists.')
   
-  load2ddiindex_file <- function(conn=NA, filedscr)
-  {
+        filedscr$PRODDATEDOCFILE <- format(as.Date( substr(filedscr$PRODDATEDOCFILE,1,10),'%Y-%m-%d'),"%d/%b/%Y")
+        
+      dbSendUpdate(ch,
+      # cat(
+        paste('
+        insert into FILEDSCR (',paste(names(filedscr), sep = '', collapse = ', '),')
+        VALUES (',paste("'",paste(gsub("'","",ifelse(is.na(filedscr),'',filedscr)),sep='',collapse="', '"),"'",sep=''),')',sep='')
+      )
+    
+        }
+    }
   
-  
-  
-    if(exists('filedscr'))
-      {
-      fileexists <- dbGetQuery(conn,
-                  paste("select * from filedscr where filename = '",filedscr$FILENAME,"' and filelocation ='",filedscr$FILELOCATION,"'", sep="")
-                  )
-      if(nrow(fileexists) > 0) stop('File record already exists.')
-      
-    dbSendUpdate(ch,
-    # cat(
-      paste('
-      insert into FILEDSCR (',paste(names(filedscr), sep = '', collapse = ', '),')
-      VALUES (',paste("'",paste(gsub("'","",ifelse(is.na(filedscr),'',filedscr)),sep='',collapse="', '"),"'",sep=''),')',sep='')
-    )
-  
-      }
-  }
-
 #+end_src
 *** man-load2ddiindex_file
 #+name:load2ddiindex_file
@@ -1162,7 +1165,9 @@ LinuxOperatingSystem <- function()
                   paste("select * from stdydscr where idno = '",stdydscr$IDNO,"'", sep="")
                   )
       if(nrow(stdyexists) > 0) stop('Study record already exists.')
-      
+  # format dates for oracle
+    stdydscr$PRODDATESTDY <- format(as.Date( substr(stdydscr$PRODDATESTDY,1,10),'%Y-%m-%d'),"%d/%b/%Y")
+    stdydscr$PRODDATEDOC <- format(as.Date( substr(stdydscr$PRODDATEDOC,1,10),'%Y-%m-%d'),"%d/%b/%Y")
   
     dbSendUpdate(conn,
     #   cat(
@@ -1172,6 +1177,7 @@ LinuxOperatingSystem <- function()
       )
     }
   }
+  
 #+end_src
 ** load2postgres
 *** test-load2postgres

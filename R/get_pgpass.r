@@ -38,10 +38,11 @@
         pwd <- passwordTable[recordIndex, passwordColumn]
         pwd <- as.character(pwd)
 
-      }
-    } else {
+      
+      } else {
 
-      pwd <- swishdbtools::getPassword()
+        pwd <- swishdbtools::getPassword()
+      }
     }
       record <- c(V1 = host, V2 = "5432", V3 = database, V4 = user, V5 = pwd)
       #record <- paste(host, ":5432:*:",  user,":",  pgpass, collapse = "", sep = "")

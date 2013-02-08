@@ -13,6 +13,8 @@
                   paste("select * from filedscr where filename = '",filedscr$FILENAME,"' and filelocation ='",filedscr$FILELOCATION,"'", sep="")
                   )
       if(nrow(fileexists) > 0) stop('File record already exists.')
+
+      filedscr$PRODDATEDOCFILE <- format(as.Date( substr(filedscr$PRODDATEDOCFILE,1,10),'%Y-%m-%d'),"%d/%b/%Y")
       
     dbSendUpdate(ch,
     # cat(
