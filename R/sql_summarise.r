@@ -36,11 +36,18 @@
       variablesList <- .variables
     }
     fun <- paste("), ",.fun, "(", sep = "")
-    
-    variableslist <-  paste(.fun, "(",
-                            paste(variablesList, collapse = fun, sep =
-                       ""),
-                            ")", sep ="")
+    # TODO
+    variablesList
+    .fun
+    variableslist <- paste(paste(.fun, "(", variablesList, ")", sep =
+    ""),"as", paste(variablesList, "_", .fun, sep = ""), collapse =", ")
+
+    #paste(paste(func, "(", vars, ")", sep = ""),"as", paste(vars, "_",
+    #  func, sep = ""), collapse =", ")
+    # variableslist <-  paste(.fun, "(",
+    #                         paste(variablesList, collapse = fun, sep =
+    #                    ""),
+    #                         ")", sep ="")
 
 #variableslist
     sqlquery <- paste("select ", dimensionsList, ", ", variableslist, "\nfrom ", schema, ".",

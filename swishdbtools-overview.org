@@ -2282,10 +2282,11 @@ sql <- sql_subset(conn=ch, x='spatial_ref_sys',
     ,
     check = T
     )
-  sqlmin <- sql_summarise(ewedb, 'baseball', 'id', 'year', 'min', eval =
-                          T)
-  sqlcount <- merge(sqlmax, sqlmin)
-  sqlcount$duration <- sqlcount$max - sqlcount$min
+  sqlmin <- sql_summarise(ewedb, 'baseball', 'id', 'year', c('min', 'max'), eval = F)
+  cat(sqlmin)
+  sqlcount <- dbGetQuery(ewedb, sqlmin)
+  #  merge(sqlmax, sqlmin)
+  sqlcount$duration <- sqlcount$year_max - sqlcount$year_min
   head(sqlcount)
   
   head(plycount)
@@ -2331,11 +2332,18 @@ sql <- sql_subset(conn=ch, x='spatial_ref_sys',
         variablesList <- .variables
       }
       fun <- paste("), ",.fun, "(", sep = "")
-      
-      variableslist <-  paste(.fun, "(",
-                              paste(variablesList, collapse = fun, sep =
-                         ""),
-                              ")", sep ="")
+      # TODO
+      variablesList
+      .fun
+      variableslist <- paste(paste(.fun, "(", variablesList, ")", sep =
+      ""),"as", paste(variablesList, "_", .fun, sep = ""), collapse =", ")
+  
+      #paste(paste(func, "(", vars, ")", sep = ""),"as", paste(vars, "_",
+      #  func, sep = ""), collapse =", ")
+      # variableslist <-  paste(.fun, "(",
+      #                         paste(variablesList, collapse = fun, sep =
+      #                    ""),
+      #                         ")", sep ="")
   
   #variableslist
       sqlquery <- paste("select ", dimensionsList, ", ", variableslist, "\nfrom ", schema, ".",

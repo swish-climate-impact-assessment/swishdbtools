@@ -33,10 +33,11 @@ sqlmax <- sql_summarise(
   ,
   check = T
   )
-sqlmin <- sql_summarise(ewedb, 'baseball', 'id', 'year', 'min', eval =
-                        T)
-sqlcount <- merge(sqlmax, sqlmin)
-sqlcount$duration <- sqlcount$max - sqlcount$min
+sqlmin <- sql_summarise(ewedb, 'baseball', 'id', 'year', c('min', 'max'), eval = F)
+cat(sqlmin)
+sqlcount <- dbGetQuery(ewedb, sqlmin)
+#  merge(sqlmax, sqlmin)
+sqlcount$duration <- sqlcount$year_max - sqlcount$year_min
 head(sqlcount)
 
 head(plycount)
