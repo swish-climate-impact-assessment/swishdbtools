@@ -10,14 +10,15 @@ summarise(baseball,
  nteams = length(unique(team)))
 head(baseball)
 head(
-ddply(baseball, "id", summarise,
- duration = max(year) - min(year),
- nteams = length(unique(team)))
-)
+plycount <- ddply(baseball, "id", summarise,
+ duration = max(year) - min(year))
+#                  ,
+# nteams = length(unique(team)))
+#)
 ewedb <- connect2postgres2('ewedb')
 sql_subset(ewedb, 'baseball', limit = 10, eval = T)
 undebug(sql_summarise)
-sql <- sql_summarise(
+sqlmax <- sql_summarise(
   conn = ewedb
   ,
   x = "baseball"
@@ -32,4 +33,10 @@ sql <- sql_summarise(
   ,
   check = T
   )
-head(sql)
+sqlmin <- sql_summarise(ewedb, 'baseball', 'id', 'year', 'min', eval =
+                        T)
+sqlcount <- merge(sqlmax, sqlmin)
+sqlcount$duration <- sqlcount$max - sqlcount$min
+head(sqlcount)
+
+head(plycount)
