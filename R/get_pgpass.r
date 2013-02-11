@@ -18,8 +18,10 @@
     }
 #    passwordTable <- get_passwordTable(fileName = fileName)
     exists <- file.exists(fileName)
-    if (exists)
+    if (!exists & !linux)
     {
+      dir.create(file.path(directory, "postgresql"))
+    } else {
       passwordTable <- read.table(fileName, sep = ":", stringsAsFactors=FALSE)
       #return(passwordTable)
     }
@@ -43,6 +45,9 @@
 
         pwd <- swishdbtools::getPassword()
       }
+    } else {
+      pwd <- swishdbtools::getPassword()
+      recordIndex <- NULL
     }
       record <- c(V1 = host, V2 = "5432", V3 = database, V4 = user, V5 = pwd)
       #record <- paste(host, ":5432:*:",  user,":",  pgpass, collapse = "", sep = "")
