@@ -61,4 +61,5 @@ sql_subset <- function(conn, x, subset = NA, select = "*",
       return(sqlquery)
     }
 
+
 }
