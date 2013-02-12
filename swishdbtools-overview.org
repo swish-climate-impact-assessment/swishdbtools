@@ -726,6 +726,125 @@ function (hostip = NA, db = NA, user = NA, p = NA, os = "linux",
 
 #+end_src
 
+** sql_tsfill
+*** test-sql_tsfill
+#+name:sql_tsfill
+#+begin_src R :session *R* :tangle no :exports none :eval no
+  ################################################################
+  # name:sql_tsfill
+  # # Example use FillCategoryTimeSeries
+  # FillTest.csv is a file containing incomplete values for table with columns factorA, factorB, and value
+  
+  sparseTable <- read.csv("FillTest.csv")
+  
+  variable1 = as.data.frame(toupper(letters[1:4]))
+  names(variable1) <- 'factorA'
+  
+  variable2 =  as.data.frame(c(1:3))
+  names(variable2) <- 'factorB'
+  
+  filledTable = FillCategoryTimeSeries(tableIn, "value", -1, variable1, variable2)
+  
+#+end_src
+*** R-sql_tsfill
+#+name:sql_tsfill
+#+begin_src R :session *R* :tangle R/sql_tsfill.r :exports none :eval no
+################################################################
+# name:sql_tsfill
+# NB see http://www.ats.ucla.edu/stat/stata/faq/fill_down.htm
+# fills a variable in a table for missing combinations of variable1 ... variableN
+# returns filled table
+# 'variableName' to be filled
+# 'fillValue' for filled variable 
+# 'variable1' values for category variable 1, where names(variable1) is the name of variable1
+# variable2, ...,  variableN - values and names of category variable 2 ... N
+sql_tsfill <- function(tableIn, variableName, fillValue, variable1, ...)
+{
+  argumentNames <- c(deparse(substitute(variable1)), sapply(substitute(list(...))[-1], deparse))
+  argumentNames <- paste(collapse = ", ", argumentNames)
+  
+  categoryExpression <- paste(sep = "", "t1.", names(variable1) ," = t2.", names(variable1))
+  otherVariables <- list(...)
+  for(variableIndex in 1:length(otherVariables)) 
+  {
+    variable <- otherVariables[[variableIndex]]
+    categoryExpression <- paste(sep="", categoryExpression, "\r\n", " and ", "t1.", names(variable), " = t2.", names(variable))
+  }
+  
+  tableName <- deparse(substitute(tableIn))
+  case <- paste(sep = "", "case when ", variableName, " is null then ", fillValue, " else ", variableName, " end")
+  joinExpression <- paste(sep = "", "(select * from ", argumentNames,") ", "\r\n", "t1 left join ", tableName, " t2 on ", "\r\n", categoryExpression)
+  sql <- paste(sep = "", "select t1.*, ", "\r\n", case, "\r\n", " as ", variableName, " from ", "\r\n", joinExpression)
+  
+  tableOut <-  sqldf(sql, drv = 'SQLite')
+  
+  return(tableOut)
+}
+
+
+
+#+end_src
+*** man-sql_tsfill
+#+name:sql_tsfill
+#+begin_src R :session *R* :tangle no :exports none :eval no
+################################################################
+# name:sql_tsfill
+
+#+end_src
+
+*** COMMENT versions
+**** Ian's orig src-FillCategoryTimeSeries
+#+name:FillCategoryTimeSeries
+#+begin_src R :session *R* :tangle no :exports none :eval no
+################################################################
+# name:FillCategoryTimeSeries
+
+# fills a variable in a table for missing combinations of variable1 ... variableN
+# returns filled table
+# 'variableName' to be filled
+# 'fillValue' for filled variable 
+# 'variable1' values for category variable 1, where names(variable1) is the name of variable1
+# variable2, ...,  variableN - values and names of category variable 2 ... N
+FillCategoryTimeSeries<-function(tableIn, variableName, fillValue, variable1, ...)
+{
+  argumentNames <- c(deparse(substitute(variable1)), sapply(substitute(list(...))[-1], deparse))
+  argumentNames <- paste(collapse = ", ", argumentNames)
+  
+  categoryExpression <- paste(sep = "", "t1.", names(variable1) ," = t2.", names(variable1))
+  otherVariables <- list(...)
+  for(variableIndex in 1:length(otherVariables)) 
+  {
+    variable <- otherVariables[[variableIndex]]
+    categoryExpression <- paste(sep="", categoryExpression, "\r\n", " and ", "t1.", names(variable), " = t2.", names(variable))
+  }
+  
+  tableName <- deparse(substitute(tableIn))
+  case <- paste(sep = "", "case when ", variableName, " is null then ", fillValue, " else ", variableName, " end")
+  joinExpression <- paste(sep = "", "(select * from ", argumentNames,") ", "\r\n", "t1 left join ", tableName, " t2 on ", "\r\n", categoryExpression)
+  sql <- paste(sep = "", "select t1.*, ", "\r\n", case, "\r\n", " as ", variableName, " from ", "\r\n", joinExpression)
+  
+  tableOut <-  sqldf(sql, drv = 'SQLite')
+  
+  return(tableOut)
+}
+
+# # Example use FillCategoryTimeSeries
+# # FillTest.csv is a file containing incomplete values for table with columns factorA, factorB, and value
+# 
+# sparseTable <- read.csv("FillTest.csv") 
+# 
+# variable1 = as.data.frame(toupper(letters[1:4]))
+# names(variable1) <- 'factorA'
+# 
+# variable2 =  as.data.frame(c(1:3))
+# names(variable2) <- 'factorB'
+# 
+# filledTable = FillCategoryTimeSeries(tableIn, "value", -1, variable1, variable2)
+# 
+
+
+#+end_src
+
 ** getPassword
 *** test-getPassword
 #+name:getPassword
@@ -1419,6 +1538,48 @@ load2postgres <- function(inputfilepath,schema,tablename,pk=NULL,header=TRUE,pri
   
 }
 
+#+end_src
+
+** load2postgres_raster
+#+name:load2postgres_raster
+#+begin_src R :session *R* :tangle R/load2postgres_raster.r :exports none :eval no
+  ################################################################
+  # name:load2postgres_raster
+  load2postgres_raster <- function(filename, ip = "115.146.84.135", u = "gislibrary", d = 'ewedb', srid = 4283, remove = TRUE)
+  {
+    outname <- gsub('.tif',"", filename)
+    outname <- substr(outname, 1, nchar(outname) - 8)
+    if(os == 'linux')
+    {
+     system(
+    #        cat
+            paste(pgisutils,"raster2pgsql -s ",srid," -I -C -M ",filename," -F awap_grids.",outname," > ",outname,".sql", sep="")
+            )
+  
+     system(
+    #        cat
+            paste("psql -h ",ipaddress," -U ",u," -d ",d," -f ",outname,".sql",
+              sep = ""))
+    } else {
+      sink('raster2sql.bat')
+      cat(paste(pgisutils,"raster2pgsql\" -s ",srid," -I -C -M ",filename," -F awap_grids.",outname," > ",outname,".sql\n",sep=""))
+  
+      cat(
+      paste(pgutils,"psql\" -h ",ipaddress," -U ",u," -d ",d," -f ",outname,".sql",
+      sep = "")
+        )
+      sink()
+      system('raster2sql.bat')
+      file.remove('raster2sql.bat')
+    }
+  
+    if(remove)
+      {
+        file.remove(filename)
+        file.remove(paste(outname, '.sql', sep =""))
+      }
+  }
+  
 #+end_src
 
 ** make_ddixml
