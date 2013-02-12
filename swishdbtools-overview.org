@@ -1966,64 +1966,82 @@ load2postgres <- function(inputfilepath,schema,tablename,pk=NULL,header=TRUE,pri
 *** test-pgListTables
 #+name:pgListTables
 #+begin_src R :session *R* :tangle tests/test-pgListTables.r :exports none :eval no
-source("../R/pgListTables.r")
-ch <- connect2postgres2("ewedb")
-test_that("lists postgis table", {
-  expect_that(nrow(pgListTables(conn=ch, schema="public", pattern="spatial_ref_sys")) == 1, is_true())
-})
-
-
-# dev tests
-# tbls <- pgListTables(conn=ch, schema='public', pattern='spatial_ref_sys')
-# nrow(tbls) == 1
-# 
-# tbls <- pgListTables(conn=ch, schema='awap_grids', pattern='maxave')
-# nrow(tbls)
-# tbls
-# pgListTables(conn=ch, schema='public', pattern='dbsize')
-# tables <- dbGetQuery(ch, 'select   c.relname, nspname, c.relkind
-#                        FROM pg_catalog.pg_class c
-#                        LEFT JOIN pg_catalog.pg_namespace n
-#                      ON n.oid = c.relnamespace
-#                      where c.relkind IN (\'r\',\'\', \'v\') ')
-# 
-# table(tables$relkind)
-# # S     c     i     r     t     v 
-# # 20509    11 61649 20609 20527   109 
+  source("../R/pgListTables.r")
+  source("../R/connect2postgres2.r")
+  source("../R/connect2postgres.r")
+  source("../R/get_pgpass.r")
+  source("../R/getPassword.r")
+  source("../R/get_passwordTable.r")
+  source("../R/LinuxOperatingSystem.r")
+  
+  ch <- connect2postgres2("ewedb")
+  test_that("lists postgis table", {
+    expect_that(nrow(pgListTables(conn=ch, schema="public",
+                                  pattern="spatial_ref_sys")) == 1,
+                 is_true())
+     expect_that(nrow(pgListTables(conn=ch, schema='public',
+                                   pattern='elmoreJames')) == 0,
+                 is_true())
+  })
+  
+  
+  # dev tests
+  ##  tbls <- pgListTables(conn=ch, schema='public', pattern='spatial_ref_sys')
+  ##  nrow(tbls) == 1
+  ## #
+  ##  tbls <- pgListTables(conn=ch, schema='public', pattern='elmoreJames')
+  ##  nrow(tbls)
+  # tbls
+  # pgListTables(conn=ch, schema='public', pattern='dbsize')
+  # tables <- dbGetQuery(ch, 'select   c.relname, nspname, c.relkind
+  #                        FROM pg_catalog.pg_class c
+  #                        LEFT JOIN pg_catalog.pg_namespace n
+  #                      ON n.oid = c.relnamespace
+  #                      where c.relkind IN (\'r\',\'\', \'v\') ')
+  #
+  # table(tables$relkind)
+  # # S     c     i     r     t     v
+  # # 20509    11 61649 20609 20527   109
+  
 #+end_src
 *** R-pgListTables
 #+name:pgListTables
 #+begin_src R :session *R* :tangle R/pgListTables.r :exports none :eval no
-################################################################
-# name:pgListTables
-pgListTables <- function(conn, schema, pattern = NA)
-{
-  if(!is.na(pattern))
+  ################################################################
+  # name:pgListTables
+  pgListTables <- function(conn, schema, pattern = NA)
   {
-    tables <- dbGetQuery(conn, 
-                         paste("select   c.relname, nspname
-                       FROM pg_catalog.pg_class c
-                       LEFT JOIN pg_catalog.pg_namespace n
-                       ON n.oid = c.relnamespace
-                       where (c.relkind IN ('r','','v')) 
-                        and (nspname = '",schema,"' and relname = '",pattern,"')", sep = "")
-    )    
-  } else {
-    tables <- dbGetQuery(conn, 
-                         paste("select   c.relname, nspname
-                       FROM pg_catalog.pg_class c
-                       LEFT JOIN pg_catalog.pg_namespace n
-                       ON n.oid = c.relnamespace
-                       where (c.relkind IN ('r','','v')) 
-                        and (nspname = '",schema,"')", sep = "")
-    )    
+    if(!is.na(pattern))
+    {
+      tables <- dbGetQuery(conn,
+                           paste("select   c.relname, nspname
+                         FROM pg_catalog.pg_class c
+                         LEFT JOIN pg_catalog.pg_namespace n
+                         ON n.oid = c.relnamespace
+                         where (c.relkind IN ('r','','v'))
+                          and (nspname = '",schema,"' and relname = '",pattern,"')", sep = "")
+      )
+    } else {
+      tables <- dbGetQuery(conn,
+                           paste("select   c.relname, nspname
+                         FROM pg_catalog.pg_class c
+                         LEFT JOIN pg_catalog.pg_namespace n
+                         ON n.oid = c.relnamespace
+                         where (c.relkind IN ('r','','v'))
+                          and (nspname = '",schema,"')", sep = "")
+      )
+    }
+  
+  #   tables <- tables[grep(schema,tables$nspname),]
+  #    tables <- tables[grep(pattern, tables$relname),]
+    if(nrow(tables) > 0)
+      {
+        tables <- tables[order(tables$relname),]
+      }
+  
+    return(tables)
   }
- 
-#   tables <- tables[grep(schema,tables$nspname),]
-#    tables <- tables[grep(pattern, tables$relname),]
-  tables <- tables[order(tables$relname),]
-  return(tables)
-}
+  
 #+end_src
 *** man-pgListTables
 #+name:pgListTables
