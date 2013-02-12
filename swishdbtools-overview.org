@@ -2485,19 +2485,35 @@ sql <- sql_subset(conn=ch, x='spatial_ref_sys',
   
         }
   
-  
-      ## if(check & select=="*")
-      ##   {
-      ##     select <- names(
-      ##                    dbGetQuery(conn,
-      ##                     paste("select ", select, " from ",
-      ##                     schema, ".",
-      ##                     table, " limit 1",
-      ##                     sep = ""))
-      ##                    )
-      ##     select <- paste(select, collapse = ", ", sep = "")
-      ##   }
-  
+  ## TODO
+  ##     if(check & select.x=="*")
+  ##       {
+  ##         select_x <- names(
+  ##                        dbGetQuery(conn,
+  ##                         paste("select ", select.x, " from ",
+  ##                         schema_x, ".",
+  ##                         table_x, " limit 1",
+  ##                         sep = ""))
+  ##                        )
+  ##         #select_x <- paste(select, collapse = ", ", sep = "")
+  ##       }
+  ##     select_x
+  ##     if(check & select.y=="*")
+  ##       {
+  ##         select_y <- names(
+  ##                        dbGetQuery(conn,
+  ##                         paste("select ", select.y, " from ",
+  ##                         schema_y, ".",
+  ##                         table_y, " limit 1",
+  ##                         sep = ""))
+  ##                        )
+  ## #        select_y <- paste(select, collapse = ", ", sep = "")
+  ##       }
+  ##     select <- paste(paste(select_x,collapse = ", ", sep = ""), ", ",
+  ##                     paste(select_y[-which(select_x == select_y)],
+  ##                     collapse = ", ", sep = "")
+  ##                     )
+  ##     select
       sqlquery <- paste("select t1.", select.x, ", t2.", select.y ,
                         "\nfrom ",
                         schema_x , ".",
@@ -2507,7 +2523,7 @@ sql <- sql_subset(conn=ch, x='spatial_ref_sys',
                         table_y , " t2\n",
                         "on t1.", by.x, " = t2.", by.y,
                         sep = "")
-  cat(sqlquery)
+  # cat(sqlquery)
       ## if(!is.na(subset))
       ##   {
       ##     sqlquery <- paste(sqlquery, "where ", subset, "\n", sep = "")
