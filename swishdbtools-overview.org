@@ -2036,7 +2036,7 @@ pgListTables <- function(conn, schema, pattern = NA)
 ** postgis_raster_extract
 *** test-postgis_raster_extract
 #+name:postgis_raster_extract
-#+begin_src R :session *R* :tangle tests/test-postgis_raster_extract.r :exports none :eval no
+#+begin_src R :session *R* :tangle no :exports none :eval no
   ################################################################
   # name:postgis_raster_extract
   postgis_raster_extract(
