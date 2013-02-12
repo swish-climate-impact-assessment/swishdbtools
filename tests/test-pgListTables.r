@@ -1,7 +1,8 @@
 
-ch <- connect2postgres(h = '115.146.84.135', db = 'ewedb', user= 'gislibrary', p='gislibrary')
-test_that('lists postgis table', {
-  expect_that(nrow(pgListTables(conn=ch, schema='public', pattern='spatial_ref_sys')) == 1, is_true())
+source("../R/pgListTables.r")
+ch <- connect2postgres2("ewedb")
+test_that("lists postgis table", {
+  expect_that(nrow(pgListTables(conn=ch, schema="public", pattern="spatial_ref_sys")) == 1, is_true())
 })
 
 

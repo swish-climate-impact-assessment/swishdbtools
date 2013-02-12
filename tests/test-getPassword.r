@@ -1,4 +1,5 @@
 
+source("../R/getPassword.r")
 test_that('password returns string with characters', {
   expect_that(nchar(getPassword(remote = T))>0, is_true())
 #  expect_that(nchar(getPassword(remote = F))>0, is_true())

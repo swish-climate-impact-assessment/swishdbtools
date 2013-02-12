@@ -7,6 +7,17 @@
 -----
 
 * Introduction
+** run tests
+#+name:test_project
+#+begin_src R :session *R* :tangle test_project.r :exports none :eval no
+  ################################################################
+  # name:test_project
+  require(testthat)
+  test_dir('tests')
+  
+#+end_src
+
+** package doc
 #+name:swishdbtools-package
 #+begin_src R :session *R* :tangle man/swishdbtools-package.Rd :exports none :eval no
 \name{swishdbtools-package}
@@ -53,7 +64,8 @@ Maintainer: Who to complain to <ivan.hanigan@gmail.com>
 ** add_datadscr
 *** test-add_datadscr
 #+name:test-add_datadscr
-#+begin_src R :session *R* :tangle tests/test-add_datadscr.r :exports none :eval no
+# tests/test-add_datadscr.r 
+#+begin_src R :session *R* :tangle no :exports none :eval no
   ################################################################
   # name:test-add_datadscr
   source("R/add_datadscr.r")
@@ -120,7 +132,8 @@ Maintainer: Who to complain to <ivan.hanigan@gmail.com>
 ** add_filedscr
 *** test-add_filedscr
 #+name:test-add_stdydscr
-#+begin_src R :session *R* :tangle tests/test-add_filedscr.r :exports none :eval no
+# tests/test-add_filedscr.r
+#+begin_src R :session *R* :tangle no :exports none :eval no
   ################################################################
   # name:test-add_stdydscr
   
@@ -188,7 +201,8 @@ Maintainer: Who to complain to <ivan.hanigan@gmail.com>
 ** add_stdydscr
 *** test-add_stdydscr
 #+name:test-add_stdydscr
-#+begin_src R :session *R* :tangle tests/test-add_stdydscr.r :exports none :eval no
+# tests/test-add_stdydscr.r
+#+begin_src R :session *R* :tangle no :exports none :eval no
   ################################################################
   # name:test-add_stdydscr
   source("R/connect2oracle.r")
@@ -278,7 +292,8 @@ Maintainer: Who to complain to <ivan.hanigan@gmail.com>
 ** connect2oracle
 *** test-connect2oracle
 #+name:connect2oracle
-#+begin_src R :session *R* :tangle tests/test-connect2oracle.r :exports none :eval no
+# tests/test-connect2oracle.r
+#+begin_src R :session *R* :tangle no :exports none :eval no
 ################################################################
 # name:connect2oracle
 
@@ -401,7 +416,8 @@ t(stdydscr)
 ** connect2postgres
 *** test-connect2postgres
 #+name:connect2postgres
-#+begin_src R :session *R* :tangle tests/test-connect2postgres.r :exports none :eval no
+# tests/test-connect2postgres.r
+#+begin_src R :session *R* :tangle no :exports none :eval no
 ################################################################
 # name:connect2postgres
 
@@ -571,7 +587,8 @@ function (hostip = NA, db = NA, user = NA, p = NA, os = "linux",
 ** connect2postgres2
 *** test-connect2postgres2
 #+name:connect2postgres2
-#+begin_src R :session *R* :tangle tests/test-connect2postgres2.r :exports none :eval no
+# tests/test-connect2postgres2.r
+#+begin_src R :session *R* :tangle no :exports none :eval no
   ################################################################
   # name:connect2postgres2
     source("R/LinuxOperatingSystem.r")
@@ -632,7 +649,8 @@ function (hostip = NA, db = NA, user = NA, p = NA, os = "linux",
 ** ddiindexdb_remove_file
 *** test-ddiindexdb_remove_file
 #+name:ddiindexdb_remove_file
-#+begin_src R :session *R* :tangle tests/test-ddiindexdb_remove_file.r :exports none :eval no
+# tests/test-ddiindexdb_remove_file.r
+#+begin_src R :session *R* :tangle no :exports none :eval no
   ################################################################
   # name:ddiindexdb_remove_file
   require(swishdbtools)
@@ -687,7 +705,8 @@ function (hostip = NA, db = NA, user = NA, p = NA, os = "linux",
 ** ddiindexdb_sync_study
 *** test-ddiindexdb_sync_study
 #+name:ddiindexdb_sync_study
-#+begin_src R :session *R* :tangle tests/test-ddiindexdb_sync_study.r :exports none :eval no
+# tests/test-ddiindexdb_sync_study.r
+#+begin_src R :session *R* :tangle no :exports none :eval no
 ################################################################
 # name:ddiindexdb_sync_study
 
@@ -711,6 +730,7 @@ function (hostip = NA, db = NA, user = NA, p = NA, os = "linux",
 *** test-getPassword
 #+name:getPassword
 #+begin_src R :session *R* :tangle tests/test-getPassword.r :exports none :eval no
+source("../R/getPassword.r")
 test_that('password returns string with characters', {
   expect_that(nchar(getPassword(remote = T))>0, is_true())
 #  expect_that(nchar(getPassword(remote = F))>0, is_true())
@@ -872,7 +892,8 @@ function (remote = F)
 ** get_pgpass
 *** test-get_pgpass
 #+name:get_pgpass
-#+begin_src R :session *R* :tangle tests/test-get_pgpass.r :exports none :eval no
+# tests/test-get_pgpass.r 
+#+begin_src R :session *R* :tangle no :exports none :eval no
   ################################################################
   # name:get_pgpass
   source("R/LinuxOperatingSystem.r")
@@ -976,7 +997,8 @@ function (remote = F)
 ** LinuxOperatingSystem
 *** test-LinuxOperatingSystem
 #+name:LinuxOperatingSystem
-#+begin_src R :session *R* :tangle tests/test-LinuxOperatingSystem.r :exports none :eval no
+# tests/test-LinuxOperatingSystem.r
+#+begin_src R :session *R* :tangle no :exports none :eval no
 ################################################################
 # name:LinuxOperatingSystem
 
@@ -1019,7 +1041,8 @@ LinuxOperatingSystem <- function()
 ** load2ddiindex_data
 *** test-load2ddiindex_data
 #+name:load2ddiindex_data
-#+begin_src R :session *R* :tangle tests/test-load2ddiindex_data.r :exports none :eval no
+# tests/test-load2ddiindex_data.r
+#+begin_src R :session *R* :tangle no :exports none :eval no
   ################################################################
   # name:load2ddiindex_data
   source('R/load2ddiindex_data.r')
@@ -1077,7 +1100,8 @@ LinuxOperatingSystem <- function()
 ** load2ddiindex_file
 *** test-load2ddiindex_file
 #+name:load2ddiindex_file
-#+begin_src R :session *R* :tangle tests/test-load2ddiindex_file.r :exports none :eval no
+# tests/test-load2ddiindex_file.r
+#+begin_src R :session *R* :tangle no :exports none :eval no
   ################################################################
   # name:load2ddiindex_file
     source("R/connect2oracle.r")
@@ -1138,7 +1162,8 @@ LinuxOperatingSystem <- function()
 ** load2ddiindex_study
 *** test-load2ddiindex_study
 #+name:test-load2ddiindex_study
-#+begin_src R :session *R* :tangle tests/test-load2ddiindex_study.r :exports none :eval no
+# tests/test-load2ddiindex_study.r
+#+begin_src R :session *R* :tangle no :exports none :eval no
   ################################################################
   # name:test-load2ddiindex_study
   source("R/connect2oracle.r")
@@ -1189,7 +1214,8 @@ LinuxOperatingSystem <- function()
 ** load2postgres
 *** test-load2postgres
 #+name:test-load2postgres
-#+begin_src R :session *R* :tangle tests/test-load2postgres.r :exports none :eval no
+# tests/test-load2postgres.r
+#+begin_src R :session *R* :tangle no :exports none :eval no
   ################################################################
   # name:test-load2postgres
   source("R/load2postgres.r")
@@ -1398,7 +1424,8 @@ load2postgres <- function(inputfilepath,schema,tablename,pk=NULL,header=TRUE,pri
 ** make_ddixml
 *** test-make_ddixml
 #+name:test-make_ddixml
-#+begin_src R :session *R* :tangle tests/test-make_ddixml.r :exports none :eval no
+# tests/test-make_ddixml.r
+#+begin_src R :session *R* :tangle no :exports none :eval no
   ################################################################
   # name:test-make_ddixml
   source("R/make_ddixml.r")
@@ -1939,9 +1966,10 @@ load2postgres <- function(inputfilepath,schema,tablename,pk=NULL,header=TRUE,pri
 *** test-pgListTables
 #+name:pgListTables
 #+begin_src R :session *R* :tangle tests/test-pgListTables.r :exports none :eval no
-ch <- connect2postgres(h = '115.146.84.135', db = 'ewedb', user= 'gislibrary', p='gislibrary')
-test_that('lists postgis table', {
-  expect_that(nrow(pgListTables(conn=ch, schema='public', pattern='spatial_ref_sys')) == 1, is_true())
+source("../R/pgListTables.r")
+ch <- connect2postgres2("ewedb")
+test_that("lists postgis table", {
+  expect_that(nrow(pgListTables(conn=ch, schema="public", pattern="spatial_ref_sys")) == 1, is_true())
 })
 
 
@@ -2009,7 +2037,8 @@ pgListTables <- function(conn, schema, pattern = NA)
 ** sql_subset_into
 *** test-sql_subset_into
 #+name:test-sql_subset_into
-#+begin_src R :session *R* :tangle tests/test-sql_subset_into.r :exports none :eval no
+# tests/test-sql_subset_into.r
+#+begin_src R :session *R* :tangle no :exports none :eval no
   source("R/connect2postgres.r")
   source("R/sql_subset.r")
   source("R/sql_subset_into.r")
@@ -2055,7 +2084,8 @@ pgListTables <- function(conn, schema, pattern = NA)
 ** sql_subset
 *** test-sql_subset.r
 #+name:test-sql_subset.r
-#+begin_src R :session *R* :tangle tests/test-sql_subset.r :exports none :eval no
+# tests/test-sql_subset.r
+#+begin_src R :session *R* :tangle no :exports none :eval no
   
   ## install.packages("~/tools/swishdbtools_1.1_R_x86_64-pc-linux-gnu.tar.gz", repos = NULL, type = "source")
   require(swishdbtools)
@@ -2247,7 +2277,8 @@ sql <- sql_subset(conn=ch, x='spatial_ref_sys',
 ** sql_summarise
 *** test-sql_summarise
 #+name:sql_summarise
-#+begin_src R :session *R* :tangle tests/test-sql_summarise.r :exports none :eval no
+# tests/test-sql_summarise.r
+#+begin_src R :session *R* :tangle no  :exports none :eval no
   ################################################################
   # name:sql_summarise
   
