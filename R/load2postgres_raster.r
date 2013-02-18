@@ -1,10 +1,11 @@
 
 ################################################################
 # name:load2postgres_raster
-load2postgres_raster <- function(filename, ip = "115.146.84.135", u = "gislibrary", d = 'ewedb', srid = 4283, remove = TRUE)
+load2postgres_raster <- function(filename, ipaddress = "115.146.84.135", u = "gislibrary", d = 'ewedb', pgisutils = "", srid = 4283, remove = TRUE)
 {
   outname <- gsub('.tif',"", filename)
   outname <- substr(outname, 1, nchar(outname) - 8)
+  os <- LinuxOperatingSystem()
   if(os == 'linux')
   {
    system(
