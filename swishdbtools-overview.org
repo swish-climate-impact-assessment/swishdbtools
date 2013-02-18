@@ -3031,7 +3031,7 @@ sql <- sql_subset(conn=ch, x='spatial_ref_sys',
 #+begin_src R :session *R* :tangle R/sql_transform.r :exports none :eval no
   ################################################################
   # name:sql_transform
-     sql_transform <- function(conn, x, ,
+     sql_transform <- function(conn, x,
                                eval = FALSE, check = T)
      {
        # assume ch exists

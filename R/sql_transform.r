@@ -1,7 +1,7 @@
 
 ################################################################
 # name:sql_transform
-   sql_transform <- function(conn, x, ,
+   sql_transform <- function(conn, x,
                              eval = FALSE, check = T)
    {
      # assume ch exists
