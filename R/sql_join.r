@@ -45,7 +45,7 @@
                          sep = ""))
                         )
  
-       }
+       } else { select_x <- select.x }
  #    select_x
      if(check & select.y=="*")
        {
@@ -57,7 +57,7 @@
                          sep = ""))
                         )
  
-       }
+       } else { select_y <- select.y }
  #    select_y
  
      select.x <- paste("t1.", select_x,collapse = ", ", sep = "")
