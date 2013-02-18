@@ -6,7 +6,7 @@ load2postgres_raster <- function(filename, ipaddress = "115.146.84.135", u = "gi
   outname <- gsub('.tif',"", filename)
   outname <- substr(outname, 1, nchar(outname) - 8)
   os <- LinuxOperatingSystem()
-  if(os == 'linux')
+  if(os)
   {
    system(
   #        cat
@@ -22,7 +22,7 @@ load2postgres_raster <- function(filename, ipaddress = "115.146.84.135", u = "gi
     cat(paste(pgisutils,"raster2pgsql\" -s ",srid," -I -C -M ",filename," -F awap_grids.",outname," > ",outname,".sql\n",sep=""))
 
     cat(
-    paste(pgutils,"psql\" -h ",ipaddress," -U ",u," -d ",d," -f ",outname,".sql",
+    paste(pgisutils,"psql\" -h ",ipaddress," -U ",u," -d ",d," -f ",outname,".sql",
     sep = "")
       )
     sink()
