@@ -2244,6 +2244,73 @@ load2postgres <- function(inputfilepath,schema,tablename,pk=NULL,header=TRUE,pri
 
 #+end_src
 
+** postgis_join_attributes
+*** test-postgis_join_attributes
+#+name:postgis_join_attributes
+#+begin_src R :session *R* :tangle no :exports none :eval no
+################################################################
+# name:postgis_join_attributes
+
+#+end_src
+*** R-postgis_join_attributes
+#+name:postgis_join_attributes
+#+begin_src R :session *R* :tangle R/postgis_join_attributes.r :exports none :eval no
+  ################################################################
+  # name:postgis_join_attributes
+  
+  postgis_join_attributes <- function(channel,
+      tablename, zones, into, zonesid.x, zonesid.y = zones.x, simplify = 0.02, eval = FALSE){
+      ## channel = ch
+      ## zones = 'abs_poa.nswpoa01'
+      ## tablename = 'qcmap_rain'
+      ## variable = 'totalssum'
+      ## into = paste(tablename,1,sep = "")
+      ## zonesid = 'poa_code'
+      ## simplify = 0.02
+      ## tidy = FALSE
+      # test <- try(dbGetQuery(ch,paste("select ",zonesid," from ",into," limit 1;", sep = "")))
+      # if(length(test) > 0){
+      #   dbSendQuery(ch,paste("drop table ", into))
+      # }
+  
+  
+  #                cat(
+           sql <-  paste("
+                   select t1.*,
+                   st_simplify(the_geom, ",simplify,") as the_geom
+                   into ",into,"
+                   from ",tablename," t1
+                   join ",zones," t2
+                   on ",zonesid.x," =
+                    ",zonesid.y,";
+  
+                   alter table ",into," add column gid serial primary key;",
+                   sep = "")
+  
+      if(eval)
+      {
+      dbSendQuery(ch, sql)
+      dbSendQuery(ch, paste("grant select on",into,"to public_group"))
+      } else {
+      return(sql)
+      }
+    #  shp <- readOGR2(hostip = NA, user = NA, db = NA, layer = NA, p = p)
+      ## if(tidy == TRUE){
+      ##   dbSendQuery(ch,'drop table temp;')
+      ##   dbSendQuery(ch,'drop table temp1;')
+      ## }
+  
+    }
+  
+#+end_src
+*** man-postgis_join_attributes
+#+name:postgis_join_attributes
+#+begin_src R :session *R* :tangle no :exports none :eval no
+################################################################
+# name:postgis_join_attributes
+
+#+end_src
+
 ** postgis_raster_extract
 *** test-postgis_raster_extract
 #+name:postgis_raster_extract
