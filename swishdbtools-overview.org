@@ -2463,6 +2463,44 @@ load2postgres <- function(inputfilepath,schema,tablename,pk=NULL,header=TRUE,pri
 
 #+end_src
 
+** readGDAL2
+*** test-readGDAL2
+#+name:readGDAL2
+#+begin_src R :session *R* :tangle tests/test-readGDAL2.r :exports none :eval no
+  ################################################################
+  # name:readGDAL2
+  require(swishdbtools)
+  pwd <- getPassword()
+  rast <- readGDAL2(hostip="115.146.84.135",user="gislibrary",
+              db="ewedb",schema = "awap_grids",table= "maxave_20130108",p = pwd)
+  
+  image(rast)
+  
+#+end_src
+*** R-readGDAL2
+#+name:readGDAL2
+#+begin_src R :session *R* :tangle R/readGDAL2.r :exports none :eval no
+  ################################################################
+  # name:readGDAL2
+  readGDAL2 <- function(hostip=NA,user=NA,db=NA, schema=NA, table=NA, p = NA)
+  {
+    sql <-
+      paste("PG:host=",hostip," port=5432 dbname='",db,"' user='",user,"' password='",p,"' schema='",schema,"' table=", table,
+              sep = "")
+  
+    r <- readGDAL(sql)
+    return(r)
+  }
+  
+#+end_src
+*** man-readGDAL2
+#+name:readGDAL2
+#+begin_src R :session *R* :tangle no :exports none :eval no
+################################################################
+# name:readGDAL2
+
+#+end_src
+
 ** readOGR2
 *** test-readOGR2
 #+name:readOGR2
