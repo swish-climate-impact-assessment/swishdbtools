@@ -729,10 +729,10 @@ function (hostip = NA, db = NA, user = NA, p = NA, os = "linux",
 ** fixGeom
 *** test-fixGeom
 #+name:fixGeom
-#+begin_src R :session *R* :tangle tests/test-fixGeom.r :exports none :eval no
-################################################################
-# name:fixGeom
-
+#+begin_src R :session *R* :tangle no :exports none :eval no
+  ################################################################
+  # name:fixGeom
+  
 #+end_src
 *** R-fixGeom
 #+name:fixGeom
