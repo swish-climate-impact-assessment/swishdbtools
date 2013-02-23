@@ -726,6 +726,33 @@ function (hostip = NA, db = NA, user = NA, p = NA, os = "linux",
 
 #+end_src
 
+** fixGeom
+*** test-fixGeom
+#+name:fixGeom
+#+begin_src R :session *R* :tangle tests/test-fixGeom.r :exports none :eval no
+################################################################
+# name:fixGeom
+
+#+end_src
+*** R-fixGeom
+#+name:fixGeom
+#+begin_src R :session *R* :tangle R/fixGeom.r :exports none :eval no
+################################################################
+# name:fixGeom
+fixgeom <- paste("INSERT INTO geometry_columns(f_table_catalog, f_table_schema, f_table_name, f_geometry_column, coord_dimension, srid, \"type\")
+   SELECT '', '",schema,"', '",table,"', 'the_geom', ST_CoordDim(the_geom), ST_SRID(the_geom), GeometryType(the_geom)
+   FROM ",schema,".",table," LIMIT 1;", sep = "")
+sql <- paste(sql,fixgeom,sep = "\n")
+
+#+end_src
+*** man-fixGeom
+#+name:fixGeom
+#+begin_src R :session *R* :tangle no :exports none :eval no
+################################################################
+# name:fixGeom
+
+#+end_src
+
 ** sql_tsfill
 *** test-sql_tsfill
 #+name:sql_tsfill
