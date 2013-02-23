@@ -1634,6 +1634,7 @@ load2postgres <- function(inputfilepath,schema,tablename,pk=NULL,header=TRUE,pri
     #        cat
             paste("psql -h ",ipaddress," -U ",u," -d ",d," -f ",outname,".sql",
               sep = ""))
+    file.remove(paste(outname, '.sql', sep =""))
     } else {
       sink('shp2sql.bat')
       cat(paste(pgisutils,"shp2pgsql\" -s ",srid," -D ",filename," ",outname," > ",outname,".sql\n",sep=""))
@@ -1650,7 +1651,7 @@ load2postgres <- function(inputfilepath,schema,tablename,pk=NULL,header=TRUE,pri
     if(remove)
       {
         file.remove(filename)
-        file.remove(paste(outname, '.sql', sep =""))
+        
       }
   }
   
