@@ -11,7 +11,7 @@ pgListTables <- function(conn, schema, pattern = NA)
                        LEFT JOIN pg_catalog.pg_namespace n
                        ON n.oid = c.relnamespace
                        where (c.relkind IN ('r','','v'))
-                        and (nspname = '",schema,"' and relname = '",pattern,"')", sep = "")
+                        and (nspname = '",schema,"' and relname like '%",pattern,"%')", sep = "")
     )
   } else {
     tables <- dbGetQuery(conn,

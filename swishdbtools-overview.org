@@ -2310,6 +2310,7 @@ load2postgres <- function(inputfilepath,schema,tablename,pk=NULL,header=TRUE,pri
 *** test-pgListTables
 #+name:pgListTables
 #+begin_src R :session *R* :tangle tests/test-pgListTables.r :exports none :eval no
+  #require(testthat)
   source("../R/pgListTables.r")
   source("../R/connect2postgres2.r")
   source("../R/connect2postgres.r")
@@ -2321,7 +2322,7 @@ load2postgres <- function(inputfilepath,schema,tablename,pk=NULL,header=TRUE,pri
   ch <- connect2postgres2("ewedb")
   test_that("lists postgis table", {
     expect_that(nrow(pgListTables(conn=ch, schema="public",
-                                  pattern="spatial_ref_sys")) == 1,
+                                  pattern="spatial_ref_s")) == 1,
                  is_true())
      expect_that(nrow(pgListTables(conn=ch, schema='public',
                                    pattern='elmoreJames')) == 0,
@@ -2363,7 +2364,7 @@ load2postgres <- function(inputfilepath,schema,tablename,pk=NULL,header=TRUE,pri
                          LEFT JOIN pg_catalog.pg_namespace n
                          ON n.oid = c.relnamespace
                          where (c.relkind IN ('r','','v'))
-                          and (nspname = '",schema,"' and relname = '",pattern,"')", sep = "")
+                          and (nspname = '",schema,"' and relname like '%",pattern,"%')", sep = "")
       )
     } else {
       tables <- dbGetQuery(conn,
