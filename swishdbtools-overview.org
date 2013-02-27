@@ -3428,3 +3428,87 @@ sql <- sql_subset(conn=ch, x='spatial_ref_sys',
 # name:sql_transform
 
 #+end_src
+** sqldf_lag
+*** test-sqldf_lag
+#+name:sqldf_lag
+#+begin_src R :session *R* :tangle no :exports none :eval no
+################################################################
+# name:sqldf_lag
+
+#+end_src
+*** R-sqldf_lag
+#+name:sqldf_lag
+#+begin_src R :session *R* :tangle R/sqldf_lag.r :exports none :eval no
+################################################################
+# name:sqldf_lag
+  sqldf_lag <- function(df, x, shift = 1, eval = F, variable1, ...)
+  {
+    argumentNames <- c(deparse(substitute(variable1)), sapply(substitute(list(...))[-1], deparse))
+    argumentNames <- paste(collapse = ", ", argumentNames)
+  
+    categoryExpression <- paste(sep = "", "t1.", variable1 ," = t2.", variable1)
+    otherVariables <- list(...)
+    for(variableIndex in 1:length(otherVariables))
+    {
+      variable <- otherVariables[[variableIndex]]
+      categoryExpression <- paste(sep="", categoryExpression, "\r\n", " and ", "t1.", variable, " = t2.", variable)
+    }
+    sql <- paste("
+    select t1.*, t2.",x," as ",x,"_lag",shift,"
+                 from ",df," t1
+                 left join
+                 ",df," t2
+                 on ",
+    categoryExpression
+                 ,"
+    and t1.date = t2.date + ",shift,"
+                 ", sep = "")
+  
+    if(!eval)
+    {
+      return(sql)
+    } else {
+      data_lagged <- sqldf(sql, drv = "SQLite")
+      return(data_lagged)
+    }
+  
+  }
+
+#+end_src
+*** man-sqldf_lag
+#+name:sqldf_lag
+#+begin_src R :session *R* :tangle no :exports none :eval no
+################################################################
+# name:sqldf_lag
+
+#+end_src
+** sql_add_column
+*** test-sql_add_column
+#+name:sql_add_column
+#+begin_src R :session *R* :tangle no :exports none :eval no
+################################################################
+# name:sql_add_column
+select * 
+from health_forecasting.hf_exposure
+
+#+end_src
+*** R-sql_add_column
+#+name:sql_add_column
+#+begin_src R :session *R* :tangle R/sql_add_column.r :exports none :eval no
+################################################################
+# name:sql_add_column
+#Adding a new column with data from a join
+#http://stackoverflow.com/questions/8097384/adding-a-new-column-with-data-from-a-join
+# alter table A add column3 datatype;
+
+# update A 
+# set column3 = B.column3 
+# from A inner join B on A.Column1 = B.Column2
+#+end_src
+*** man-sql_add_column
+#+name:sql_add_column
+#+begin_src R :session *R* :tangle no :exports none :eval no
+################################################################
+# name:sql_add_column
+
+#+end_src
