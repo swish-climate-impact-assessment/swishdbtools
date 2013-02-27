@@ -3483,29 +3483,122 @@ sql <- sql_subset(conn=ch, x='spatial_ref_sys',
 
 #+end_src
 ** sql_add_column
-*** test-sql_add_column
+*** test-sql_add_lag
+#+name:sql_add_column
+#+begin_src R :session *R* :tangle no :exports none :eval no
+  ################################################################
+  # name:sql_add_column
+  # select *
+  # from health_forecasting.hf_exposure
+  #cat(
+  for(lag_i in 4:6)
+    {
+    sql_add_lag(ch, x= "tempfoobar1", col_name = "death", shift = lag_i,
+              col_type = "integer", eval = T, variable1 = "cityname",
+              ...="agecat")
+    }
+  #)
+  
+#+end_src
+*** R-sql_add_lag
+#+name:sql_add_column
+#+begin_src R :session *R* :tangle R/sql_add_lag.r :exports none :eval no
+  ################################################################
+  # name:sql_add_column
+    sql_add_lag <- function(conn, x, col_name, shift = 1, col_type =
+                            "numeric", eval = F, variable1, ...)
+    {
+  
+      argumentNames <- c(deparse(substitute(variable1)), sapply(substitute(list(...))[-1], deparse))
+      argumentNames <- paste(collapse = ", ", argumentNames)
+  
+      categoryExpression <- paste(sep = "", "t1.", variable1 ," = t2.", variable1)
+      otherVariables <- list(...)
+      for(variableIndex in 1:length(otherVariables))
+      {
+        variable <- otherVariables[[variableIndex]]
+        categoryExpression <- paste(sep="", categoryExpression, "\r\n", " and ", "t1.", variable, " = t2.", variable)
+      }
+  
+      categoryExpression2 <- paste(sep = "", x,".", variable1 ," = foo.", variable1)
+  #    otherVariables <- list(...)
+      for(variableIndex in 1:length(otherVariables))
+      {
+        variable <- otherVariables[[variableIndex]]
+        categoryExpression2 <- paste(sep="", categoryExpression2,
+                                     "\r\n", " and ", x, ".", variable, " = foo.", variable)
+      }
+  
+      variables <- c(variable1, otherVariables)
+      variables <- paste("t1.",variables, sep = "", collapse = ",")
+  
+  
+      sql <- paste("alter table ",x," add ",col_name,"_lag",shift," ",col_type,";
+      update ",x,"
+      set  ",col_name,"_lag",shift," = (
+      select  ",col_name,"_lag",shift,"
+      from
+      (
+      select ",variables,", t1.date, t2.",col_name," as ",col_name,"_lag",shift,"
+                   from ",x," t1
+                   left join
+                   ",x," t2
+                   on ",
+      categoryExpression
+                   ,"
+      and t1.date = t2.date + ",shift,"
+      ) foo
+      where ",
+      categoryExpression2, "
+      and ",x,".date = foo.date
+      )
+                   ", sep = "")
+  
+      if(!eval)
+      {
+        return(sql)
+      } else {
+  
+        dbSendQuery(ch, sql)
+      }
+  
+    }
+  
+#+end_src
+*** dev-code
 #+name:sql_add_column
 #+begin_src R :session *R* :tangle no :exports none :eval no
 ################################################################
 # name:sql_add_column
-select * 
-from health_forecasting.hf_exposure
-
-#+end_src
-*** R-sql_add_column
-#+name:sql_add_column
-#+begin_src R :session *R* :tangle R/sql_add_column.r :exports none :eval no
-################################################################
-# name:sql_add_column
 #Adding a new column with data from a join
 #http://stackoverflow.com/questions/8097384/adding-a-new-column-with-data-from-a-join
-# alter table A add column3 datatype;
+# alter table A add column3 [yourdatatype];
 
-# update A 
-# set column3 = B.column3 
-# from A inner join B on A.Column1 = B.Column2
+# update A set column3 = (select column3 from B where A.Column1 = B.Column2) 
+#   where exists (select column3 from B where A.Column1 = B.Column2)
+
+alter table tempfoobar1 add death_lag2 integer;
+
+update tempfoobar1 
+set death_lag2 = (
+select death_lag2 
+from 
+(
+    select t1.cityname, t1.date, t1.agecat, t2.death as death_lag2
+                 from tempfoobar1 t1
+                 left join
+                 tempfoobar1 t2
+                 on t1.cityname = t2.cityname
+    and t1.agecat = t2.agecat
+    and t1.date = t2.date + 2
+) tempfoobar2 
+where tempfoobar1.cityname = tempfoobar2.cityname
+and tempfoobar1.agecat = tempfoobar2.agecat
+and tempfoobar1.date = tempfoobar2.date
+) 
+
 #+end_src
-*** man-sql_add_column
+*** man-sql_add_lag
 #+name:sql_add_column
 #+begin_src R :session *R* :tangle no :exports none :eval no
 ################################################################
