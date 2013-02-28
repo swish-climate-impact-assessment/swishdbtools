@@ -3301,19 +3301,28 @@ sql <- sql_subset(conn=ch, x='spatial_ref_sys',
   ################################################################
   # name:sql_transform
   require(plyr)
+  require(swishdbtools)
+  ch <- connect2postgres2("ewedb")
+  source("../R/sql_transform.r")
   ## ?transform
   ## Arguments:
   
   ##    _data: The object to be transformed
   
   ##      ...: Further arguments of the form ‘tag=value’
+  head(airquality)
+  airquality2 <- transform(airquality, Ozone = -Ozone)
+  airquality2 <- transform(airquality2, new = -Ozone, Temp = (Temp-32)/1.8)
+  head(airquality2)
   
-       transform(airquality, Ozone = -Ozone)
-       transform(airquality, new = -Ozone, Temp = (Temp-32)/1.8)
-  
-       attach(airquality)
-       transform(Ozone, logOzone = log(Ozone)) # marginally interesting ...
-       detach(airquality)
+  sql_subset(ch, "airquality", limit = 6, eval = T)
+  sql_subset_into(ch, "airquality", into_table= "airquality2", eval = T)
+  sql_transform(conn = ch,  x = "airquality2",  variable1 = "ozone = -ozone",  col_type = "numeric",  eval = T, ... = "")
+  #undebug(sql_transform)
+  sql_subset(ch, "airquality2", limit = 6, eval = T)
+  sql_transform(conn = ch, x = "airquality2", variable1 = "new = -ozone",
+    col_type = "numeric", eval = T,  ... = "")
+  sql_subset(ch, "airquality2", limit = 6, eval = T)
   
 #+end_src
 *** R-sql_transform
@@ -3322,7 +3331,9 @@ sql <- sql_subset(conn=ch, x='spatial_ref_sys',
   ################################################################
   # name:sql_transform
      sql_transform <- function(conn, x,
-                               eval = FALSE, check = T)
+                               eval = FALSE, check = T,
+                               col_type,
+                               variable1, ...)
      {
        # assume ch exists
        if(length(grep("\\.",x)) == 0)
@@ -3333,15 +3344,17 @@ sql <- sql_subset(conn=ch, x='spatial_ref_sys',
            schema_x <- strsplit(x, "\\.")[[1]][1]
            table_x <- strsplit(x, "\\.")[[1]][2]
          }
-       if(length(grep("\\.",y)) == 0)
-         {
-           schema_y <- "public"
-           table_y <- y
-         } else {
-           schema_y <- strsplit(y, "\\.")[[1]][1]
-           table_y <- strsplit(y, "\\.")[[1]][2]
-         }
+        tablename <- paste(schema_x,".",table_x, sep = "")
+        argumentNames <- c(deparse(substitute(variable1)), sapply(substitute(list(...))[-1], deparse))
+        argumentNames <- paste(collapse = ", ", argumentNames)
   
+        categoryExpression <- paste(sep = "", "t1.", variable1 ," = t2.", variable1)
+        otherVariables <- list(...)
+        for(variableIndex in 1:length(otherVariables))
+        {
+          variable <- otherVariables[[variableIndex]]
+          categoryExpression <- paste(sep="", categoryExpression, "\r\n", " and ", "t1.", variable, " = t2.", variable)
+        }
   
   
        if(check)
@@ -3354,67 +3367,31 @@ sql <- sql_subset(conn=ch, x='spatial_ref_sys',
   
          }
   
-   ## check cols exist in both and then paste together
-       if(check & select.x=="*")
-         {
-           select_x <- names(
-                          dbGetQuery(conn,
-                           paste("select ", select.x, " from ",
-                           schema_x, ".",
-                           table_x, " limit 1",
-                           sep = ""))
-                          )
+        col_name <- gsub(" ", "", unlist(strsplit(variable1, "=")[[1]][1]))
+  #      col_transformation <- gsub(" ", "", unlist(strsplit(variable1, "=")[[1]][2]))
+        namesExist <- sql_subset(conn, tablename, limit = 1, eval = T)
+        if(length(which(col_name ==  names(namesExist)) > 0) == 0)
+          {
+          sql <- paste("alter table ", tablename," add ",col_name," ",col_type,";
+          update ", tablename ,"
+          set  ",variable1,"
+          ", sep = "")
+          } else {
+          sql <- paste("
+          update ", tablename ,"
+          set  ",variable1,"
+          ", sep = "")
+          }
   
-         }
-   #    select_x
-       if(check & select.y=="*")
-         {
-           select_y <- names(
-                          dbGetQuery(conn,
-                           paste("select ", select.y, " from ",
-                           schema_y, ".",
-                           table_y, " limit 1",
-                           sep = ""))
-                          )
   
-         }
-   #    select_y
-  
-       select.x <- paste("t1.", select_x,collapse = ", ", sep = "")
-       for(.by in by)
-         {
-           recordIndex <- which(.by == select_y)
-           select_y <- select_y[-recordIndex]
-         }
-       select.y <- paste("t2.",select_y, collapse = ", ", sep = "")
-  
-   #    select
-       sqlquery <- paste("select ", select.x, ", ", select.y ,
-                         "\nfrom ",
-                         schema_x , ".",
-                         table_x , " t1\n",
-                         type, " join\n",
-                         schema_y , ".",
-                         table_y , " t2\n",
-                         "on t1.", by.x, " = t2.", by.y,
-                         sep = "")
-  #  cat(sqlquery)
-       ## if(!is.na(subset))
-       ##   {
-       ##     sqlquery <- paste(sqlquery, "where ", subset, "\n", sep = "")
-       ##   }
-  
-       ## if(limit > 0)
-       ##   {
-       ##     sqlquery <- paste(sqlquery, "limit ", limit, "\n", sep = "")
-       ##   }
+       #cat(sql)
   
        if(eval)
          {
-           dat <- dbGetQuery(conn,sqlquery)
-           return(dat)
+           dbSendQuery(conn,sql)
+  
          } else {
-           return(sqlquery)
+           return(sql)
          }
   
   
@@ -3482,12 +3459,12 @@ sql <- sql_subset(conn=ch, x='spatial_ref_sys',
 # name:sqldf_lag
 
 #+end_src
-** sql_add_column
+** sql_add_lag
 *** test-sql_add_lag
 #+name:sql_add_column
 #+begin_src R :session *R* :tangle no :exports none :eval no
   ################################################################
-  # name:sql_add_column
+  # name:sql_add_lag
   # select *
   # from health_forecasting.hf_exposure
   #cat(
@@ -3501,10 +3478,10 @@ sql <- sql_subset(conn=ch, x='spatial_ref_sys',
   
 #+end_src
 *** R-sql_add_lag
-#+name:sql_add_column
+#+name:sql_add_lag
 #+begin_src R :session *R* :tangle R/sql_add_lag.r :exports none :eval no
   ################################################################
-  # name:sql_add_column
+  # name:sql_add_lag
     sql_add_lag <- function(conn, x, col_name, shift = 1, col_type =
                             "numeric", eval = F, variable1, ...)
     {
@@ -3566,16 +3543,8 @@ sql <- sql_subset(conn=ch, x='spatial_ref_sys',
   
 #+end_src
 *** dev-code
-#+name:sql_add_column
 #+begin_src R :session *R* :tangle no :exports none :eval no
 ################################################################
-# name:sql_add_column
-#Adding a new column with data from a join
-#http://stackoverflow.com/questions/8097384/adding-a-new-column-with-data-from-a-join
-# alter table A add column3 [yourdatatype];
-
-# update A set column3 = (select column3 from B where A.Column1 = B.Column2) 
-#   where exists (select column3 from B where A.Column1 = B.Column2)
 
 alter table tempfoobar1 add death_lag2 integer;
 
@@ -3599,9 +3568,96 @@ and tempfoobar1.date = tempfoobar2.date
 
 #+end_src
 *** man-sql_add_lag
-#+name:sql_add_column
 #+begin_src R :session *R* :tangle no :exports none :eval no
 ################################################################
-# name:sql_add_column
+
+
+#+end_src
+
+
+** sql_add_column
+*** test-sql_add_column
+#+name:sql_add_column
+#+begin_src R :session *R* :tangle no :exports none :eval no
+  ################################################################
+  # name:sql_add_column
+  # select *
+  # from health_forecasting.hf_exposure
+  #cat(
+  source("./R/sql_add_column.r")
+  
+   sql_add_column(ch, x= "airquality", from_table = "airquality2",
+                   col_name = "new",
+                   eval = T, variable1 = "month",
+              ...="day")
+   sql_subset(ch, "airquality", limit = 6, eval = T)
+  #)
+  dbSendQuery(ch, "alter table airquality drop column new")
+  
+#+end_src
+*** R-sql_add_column
+#+name:sql_add_column
+#+begin_src R :session *R* :tangle R/sql_add_column.r :exports none :eval no
+  ################################################################
+  # name:sql_add_column
+  #Adding a new column with data from a join
+  #http://stackoverflow.com/questions/8097384/adding-a-new-column-with-data-from-a-join
+  # alter table A add column3 [yourdatatype];
+  
+  # update A set column3 = (select column3 from B where A.Column1 = B.Column2)
+  #   where exists (select column3 from B where A.Column1 = B.Column2)
+  
+    sql_add_column <- function(conn, x, from_table, col_name, col_type = "numeric", eval = F, variable1, ...)
+    {
+  
+      argumentNames <- c(deparse(substitute(variable1)), sapply(substitute(list(...))[-1], deparse))
+      argumentNames <- paste(collapse = ", ", argumentNames)
+  
+      categoryExpression <- paste(sep = "", x, ".", variable1 ," = ",from_table,".", variable1)
+      otherVariables <- list(...)
+      for(variableIndex in 1:length(otherVariables))
+      {
+        variable <- otherVariables[[variableIndex]]
+        categoryExpression <- paste(sep="", categoryExpression, "\r\n", " and ", x, ".", variable, " = ",from_table,".", variable)
+      }
+  
+  #     categoryExpression2 <- paste(sep = "", x,".", variable1 ," = foo.", variable1)
+  # #    otherVariables <- list(...)
+  #     for(variableIndex in 1:length(otherVariables))
+  #     {
+  #       variable <- otherVariables[[variableIndex]]
+  #       categoryExpression2 <- paste(sep="", categoryExpression2,
+  #                                    "\r\n", " and ", x, ".", variable, " = foo.", variable)
+  #     }
+  
+      # variables <- c(variable1, otherVariables)
+      # variables <- paste("t1.",variables, sep = "", collapse = ",")
+  
+  
+      sql <- paste("alter table ",x," add ",col_name," ",col_type,";
+      update ",x,"
+      set  ",col_name," = (
+      select  ",col_name,"
+      from ", from_table, "
+      where ",
+      categoryExpression, "
+      )
+      ", sep = "")
+  
+      if(!eval)
+      {
+        return(sql)
+      } else {
+  
+        dbSendQuery(ch, sql)
+      }
+  
+    }
+  
+#+end_src
+*** man-sql_add_column
+#+begin_src R :session *R* :tangle no :exports none :eval no
+################################################################
+
 
 #+end_src

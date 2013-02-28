@@ -1,6 +1,6 @@
 
 ################################################################
-# name:sql_add_column
+# name:sql_add_lag
   sql_add_lag <- function(conn, x, col_name, shift = 1, col_type =
                           "numeric", eval = F, variable1, ...)
   {

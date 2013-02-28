@@ -2,7 +2,9 @@
 ################################################################
 # name:sql_transform
    sql_transform <- function(conn, x,
-                             eval = FALSE, check = T)
+                             eval = FALSE, check = T,
+                             col_type,
+                             variable1, ...)
    {
      # assume ch exists
      if(length(grep("\\.",x)) == 0)
@@ -13,15 +15,17 @@
          schema_x <- strsplit(x, "\\.")[[1]][1]
          table_x <- strsplit(x, "\\.")[[1]][2]
        }
-     if(length(grep("\\.",y)) == 0)
-       {
-         schema_y <- "public"
-         table_y <- y
-       } else {
-         schema_y <- strsplit(y, "\\.")[[1]][1]
-         table_y <- strsplit(y, "\\.")[[1]][2]
-       }
+      tablename <- paste(schema_x,".",table_x, sep = "")
+      argumentNames <- c(deparse(substitute(variable1)), sapply(substitute(list(...))[-1], deparse))
+      argumentNames <- paste(collapse = ", ", argumentNames)
 
+      categoryExpression <- paste(sep = "", "t1.", variable1 ," = t2.", variable1)
+      otherVariables <- list(...)
+      for(variableIndex in 1:length(otherVariables))
+      {
+        variable <- otherVariables[[variableIndex]]
+        categoryExpression <- paste(sep="", categoryExpression, "\r\n", " and ", "t1.", variable, " = t2.", variable)
+      }
 
 
      if(check)
@@ -34,67 +38,31 @@
 
        }
 
- ## check cols exist in both and then paste together
-     if(check & select.x=="*")
-       {
-         select_x <- names(
-                        dbGetQuery(conn,
-                         paste("select ", select.x, " from ",
-                         schema_x, ".",
-                         table_x, " limit 1",
-                         sep = ""))
-                        )
+      col_name <- gsub(" ", "", unlist(strsplit(variable1, "=")[[1]][1]))
+#      col_transformation <- gsub(" ", "", unlist(strsplit(variable1, "=")[[1]][2]))
+      namesExist <- sql_subset(conn, tablename, limit = 1, eval = T)
+      if(length(which(col_name ==  names(namesExist)) > 0) == 0)
+        {
+        sql <- paste("alter table ", tablename," add ",col_name," ",col_type,";
+        update ", tablename ,"
+        set  ",variable1,"
+        ", sep = "")
+        } else {
+        sql <- paste("
+        update ", tablename ,"
+        set  ",variable1,"
+        ", sep = "")
+        }
 
-       }
- #    select_x
-     if(check & select.y=="*")
-       {
-         select_y <- names(
-                        dbGetQuery(conn,
-                         paste("select ", select.y, " from ",
-                         schema_y, ".",
-                         table_y, " limit 1",
-                         sep = ""))
-                        )
 
-       }
- #    select_y
-
-     select.x <- paste("t1.", select_x,collapse = ", ", sep = "")
-     for(.by in by)
-       {
-         recordIndex <- which(.by == select_y)
-         select_y <- select_y[-recordIndex]
-       }
-     select.y <- paste("t2.",select_y, collapse = ", ", sep = "")
-
- #    select
-     sqlquery <- paste("select ", select.x, ", ", select.y ,
-                       "\nfrom ",
-                       schema_x , ".",
-                       table_x , " t1\n",
-                       type, " join\n",
-                       schema_y , ".",
-                       table_y , " t2\n",
-                       "on t1.", by.x, " = t2.", by.y,
-                       sep = "")
-#  cat(sqlquery)
-     ## if(!is.na(subset))
-     ##   {
-     ##     sqlquery <- paste(sqlquery, "where ", subset, "\n", sep = "")
-     ##   }
-
-     ## if(limit > 0)
-     ##   {
-     ##     sqlquery <- paste(sqlquery, "limit ", limit, "\n", sep = "")
-     ##   }
+     #cat(sql)
 
      if(eval)
        {
-         dat <- dbGetQuery(conn,sqlquery)
-         return(dat)
+         dbSendQuery(conn,sql)
+
        } else {
-         return(sqlquery)
+         return(sql)
        }
 
 
