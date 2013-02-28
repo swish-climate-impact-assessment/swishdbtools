@@ -3,7 +3,7 @@
 # name:sql_transform
    sql_transform <- function(conn, x,
                              eval = FALSE, check = T,
-                             col_type,
+                             col_type = "float8",
                              variable1, ...)
    {
      # assume ch exists

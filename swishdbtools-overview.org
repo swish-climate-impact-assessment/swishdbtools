@@ -3332,7 +3332,7 @@ sql <- sql_subset(conn=ch, x='spatial_ref_sys',
   # name:sql_transform
      sql_transform <- function(conn, x,
                                eval = FALSE, check = T,
-                               col_type,
+                               col_type = "float8",
                                variable1, ...)
      {
        # assume ch exists
@@ -3403,7 +3403,7 @@ sql <- sql_subset(conn=ch, x='spatial_ref_sys',
 #+begin_src R :session *R* :tangle no :exports none :eval no
 ################################################################
 # name:sql_transform
-
+#NB prefer int and double (float8) rather than bigint and numeric
 #+end_src
 ** sqldf_lag
 *** test-sqldf_lag
