@@ -3574,7 +3574,6 @@ and tempfoobar1.date = tempfoobar2.date
 
 #+end_src
 
-
 ** sql_add_column
 *** test-sql_add_column
 #+name:sql_add_column
