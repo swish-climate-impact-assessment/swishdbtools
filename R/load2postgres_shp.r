@@ -9,12 +9,12 @@
     {
 #      system(
     #        cat
-           sql <- paste(pgisutils,"shp2pgsql -s ",srid," -D ",filename," ",outname," > ",outname,".sql", sep="")
+           sql <- paste(pgisutils,"shp2pgsql -s ",srid," -D ",filename," ",outname," > ",out_table,".sql", sep="")
             #)
 
      #system(
     #        cat
-            cli <- paste("psql -h ",ipaddress," -U ",u," -d ",d," -f ",outname,".sql",
+            cli <- paste("psql -h ",ipaddress," -U ",u," -d ",d," -f ",out_table,".sql",
               sep = "")
             #)
     if(eval)
@@ -30,10 +30,10 @@
 
     } else {
       sink('shp2sql.bat')
-      cat(paste(pgisutils,"shp2pgsql\" -s ",srid," -D ",filename," ",outname," > ",outname,".sql\n",sep=""))
+      cat(paste(pgisutils,"shp2pgsql\" -s ",srid," -D ",filename," ",outname," > ",out_table,".sql\n",sep=""))
 
       cat(
-      paste(pgisutils,"psql\" -h ",ipaddress," -U ",u," -d ",d," -f ",outname,".sql",
+      paste(pgisutils,"psql\" -h ",ipaddress," -U ",u," -d ",d," -f ",out_table,".sql",
       sep = "")
         )
       sink()
