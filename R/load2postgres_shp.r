@@ -21,7 +21,7 @@
       {
         system(sql)
         system(cli)
-        file.remove(paste(outname, '.sql', sep =""))
+        file.remove(paste(out_table, '.sql', sep =""))
       } else {
         sql <- paste(sql, cli, sep = "\n")
         return(sql)
