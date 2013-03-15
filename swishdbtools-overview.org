@@ -2505,7 +2505,9 @@ load2postgres <- function(inputfilepath,schema,tablename,pk=NULL,header=TRUE,pri
 #+begin_src R :session *R* :tangle R/postgis_raster_extract.r :exports none :eval no
   ################################################################
   
-  postgis_raster_extract <- function(conn, x, y, fun = NA, eval = FALSE, zone_label, value_label = NA, into = FALSE)
+  postgis_raster_extract <- function(conn, x, y, fun = NA, eval = FALSE,
+                                     zone_label, value_label = NA,
+                                     into_a_table = FALSE)
   {
   # assumptions
   out_schema <- "public"
@@ -2534,7 +2536,7 @@ load2postgres <- function(inputfilepath,schema,tablename,pk=NULL,header=TRUE,pri
   ", sep ="")
   
   
-  if(into)
+  if(into_a_table)
   {
     out_table <- paste(y, "_extract_",value_label, sep = "")
     tblList <- pgListTables(conn, schema=out_schema)
@@ -2549,9 +2551,12 @@ load2postgres <- function(inputfilepath,schema,tablename,pk=NULL,header=TRUE,pri
   
   }
   
-  return(sql)
-  #dbSendQuery(conn,
-  #
+  if(eval)
+    {
+      dbSendQuery(conn, sql)
+    } else {
+      return(sql)
+    }
   
   }
   

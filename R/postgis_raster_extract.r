@@ -1,7 +1,9 @@
 
 ################################################################
 
-postgis_raster_extract <- function(conn, x, y, fun = NA, eval = FALSE, zone_label, value_label = NA, into = FALSE)
+postgis_raster_extract <- function(conn, x, y, fun = NA, eval = FALSE,
+                                   zone_label, value_label = NA,
+                                   into_a_table = FALSE)
 {
 # assumptions
 out_schema <- "public"
@@ -30,7 +32,7 @@ WHERE ST_Intersects(rast, the_geom)
 ", sep ="")
 
 
-if(into)
+if(into_a_table)
 {
   out_table <- paste(y, "_extract_",value_label, sep = "")
   tblList <- pgListTables(conn, schema=out_schema)
@@ -45,8 +47,11 @@ if(into)
 
 }
 
-return(sql)
-#dbSendQuery(conn,
-#
+if(eval)
+  {
+    dbSendQuery(conn, sql)
+  } else {
+    return(sql)
+  }
 
 }
