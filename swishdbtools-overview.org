@@ -1303,16 +1303,15 @@ LinuxOperatingSystem <- function()
     source("R/add_filedscr.r")
     source("R/getPassword.r")
     source("R/load2ddiindex_file.r")
-    
+  
     pwd <- getPassword(remote=T)
     ch <- connect2oracle('115.146.93.225', db="DDIINDEXDB", p = pwd)
-    if(!exists('file'))
+    if(!exists('filedscr'))
     {
-      file <- add_filedscr(ask = T)
+      filedscr <- add_filedscr(idno = "test", ask = T)
     }
   
-    load2ddiindex_file(conn = ch, file)
-    
+    load2ddiindex_file(conn = ch, filedscr)
   
 #+end_src
 *** R-load2ddiindex_file
@@ -1320,28 +1319,29 @@ LinuxOperatingSystem <- function()
 #+begin_src R :session *R* :tangle R/load2ddiindex_file.r :exports none :eval no
   ################################################################
   # name:load2ddiindex_file
-    
+  
     load2ddiindex_file <- function(conn=NA, filedscr)
     {
-    
-    
-    
+  
       if(exists('filedscr'))
         {
         fileexists <- dbGetQuery(conn,
                     paste("select * from filedscr where filename = '",filedscr$FILENAME,"' and filelocation ='",filedscr$FILELOCATION,"'", sep="")
                     )
         if(nrow(fileexists) > 0) stop('File record already exists.')
-  
-        filedscr$PRODDATEDOCFILE <- format(as.Date( substr(filedscr$PRODDATEDOCFILE,1,10),'%Y-%m-%d'),"%d/%b/%Y")
-        
+        if(length(grep("PRODDATEDOCFILE", names(filedscr))) > 0)
+          {
+            filedscr$PRODDATEDOCFILE <- format(as.Date(
+                                        substr(filedscr$PRODDATEDOCFILE,1,10),'%Y-%m-%d'
+                                        ),"%d/%b/%Y")
+          }
       dbSendUpdate(ch,
       # cat(
         paste('
         insert into FILEDSCR (',paste(names(filedscr), sep = '', collapse = ', '),')
         VALUES (',paste("'",paste(gsub("'","",ifelse(is.na(filedscr),'',filedscr)),sep='',collapse="', '"),"'",sep=''),')',sep='')
       )
-    
+  
         }
     }
   
