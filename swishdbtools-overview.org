@@ -2854,6 +2854,14 @@ load2postgres <- function(inputfilepath,schema,tablename,pk=NULL,header=TRUE,pri
 #+begin_src R :session *R* :tangle R/sql_subset.r :exports none :eval no
   ################################################################
   # name:sqlquery_select
+  # TODO add argument to ignore_geom ie:
+    ## file_i <- pgListTables(ewedb, "drought_nswdpi")[1,]
+    ## file1 <- sql_subset(ewedb, paste("drought_nswdpi",file_i, sep ="."), limit = 1, eval = T)
+    ## goodCols <- names(file1)[-grep('the_geom', names(file1))]
+    ## file1 <- sql_subset(ewedb, paste("drought_nswdpi",file_i, sep ="."),
+    ##                     limit = 10, eval = T, select =
+    ##                     paste(goodCols, sep = "", collapse = ",")
+    ##                     )
   
   sql_subset <- function(conn, x, subset = NA, select = "*",
                               limit = -1, eval = FALSE, check = T)
@@ -2890,8 +2898,8 @@ load2postgres <- function(inputfilepath,schema,tablename,pk=NULL,header=TRUE,pri
                         sep = ""))
                        )
         select <- paste(select, collapse = ", ", sep = "")
-      } 
-
+      }
+  
     sqlquery <- paste("select ", select, "\nfrom ", schema, ".",
                       table, "\n",
                       sep = "")
@@ -2913,7 +2921,7 @@ load2postgres <- function(inputfilepath,schema,tablename,pk=NULL,header=TRUE,pri
       } else {
         return(sqlquery)
       }
-
+  
   
   }
   
