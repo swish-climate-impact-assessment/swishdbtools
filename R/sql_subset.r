@@ -1,6 +1,7 @@
 
 ################################################################
 # name:sqlquery_select
+# TODO add argument to ignore_geom ie:
 
 sql_subset <- function(conn, x, subset = NA, select = "*",
                             limit = -1, eval = FALSE, check = T)
@@ -36,8 +37,20 @@ sql_subset <- function(conn, x, subset = NA, select = "*",
                       table, " limit 1",
                       sep = ""))
                      )
+      # remove any geometry column
+      indexValue <- grep('^the_geom$', select)
+      if(length(indexValue) > 0)
+        {
+          select <- select[-indexValue]
+        }
+      indexValue <- grep('^geom$', select)
+      if(length(indexValue) > 0)
+        {
+          select <- select[-indexValue]
+        }
       select <- paste(select, collapse = ", ", sep = "")
-    } 
+
+      }
 
   sqlquery <- paste("select ", select, "\nfrom ", schema, ".",
                     table, "\n",

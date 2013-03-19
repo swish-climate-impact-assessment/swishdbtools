@@ -2890,9 +2890,17 @@ load2postgres <- function(inputfilepath,schema,tablename,pk=NULL,header=TRUE,pri
                         table, " limit 1",
                         sep = ""))
                        )
-        select <- select[-grep('the_geom', select)]
-        select <- select[-grep('$geom$', select)]
-  
+        # remove any geometry column
+        indexValue <- grep('^the_geom$', select)
+        if(length(indexValue) > 0)
+          {
+            select <- select[-indexValue]
+          }
+        indexValue <- grep('^geom$', select)
+        if(length(indexValue) > 0)
+          {
+            select <- select[-indexValue]
+          }
         select <- paste(select, collapse = ", ", sep = "")
   
         }
