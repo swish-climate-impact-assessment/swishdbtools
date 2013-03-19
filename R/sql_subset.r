@@ -38,12 +38,13 @@ sql_subset <- function(conn, x, subset = NA, select = "*",
                       sep = ""))
                      )
       # remove any geometry column
-      indexValue <- grep('^the_geom$', select)
+      indexValue <- which(select == 'the_geom')
       if(length(indexValue) > 0)
         {
           select <- select[-indexValue]
         }
-      indexValue <- grep('^geom$', select)
+
+      indexValue <- which(select == 'geom')
       if(length(indexValue) > 0)
         {
           select <- select[-indexValue]
