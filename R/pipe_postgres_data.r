@@ -3,7 +3,7 @@
 # name:pipe_postgres_data
   pipe_postgres_data <- function(ip_source = "localhost",
                         user = "user", db_source = "database",
-                        ip_target, db_target)
+                        ip_target, db_target, schema)
     {
   
       sql <- paste("psql -d ",db_target," -U ",user," -h ",ip_target,"
