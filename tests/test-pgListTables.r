@@ -10,11 +10,15 @@ source("../R/LinuxOperatingSystem.r")
 
 ch <- connect2postgres2("ewedb")
 test_that("lists postgis table", {
-  expect_that(nrow(pgListTables(conn=ch, schema="public",
-                                pattern="spatial_ref_s")) == 1,
+  expect_that(nrow(
+                   pgListTables(conn=ch, schema="public",
+                                table="spatial_ref_s")
+                   ) == 0,
                is_true())
-   expect_that(nrow(pgListTables(conn=ch, schema='public',
-                                 pattern='elmoreJames')) == 0,
+   expect_that(nrow(
+                    pgListTables(conn=ch, schema='public',
+                                 table='spatial_ref_s', match = FALSE)
+                    ) == 1,
                is_true())
 })
 

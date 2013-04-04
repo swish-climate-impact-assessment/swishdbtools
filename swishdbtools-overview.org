@@ -701,7 +701,6 @@ function (hostip = NA, db = NA, user = NA, p = NA, os = "linux",
 
 #+end_src
 
-** DEPRECATED df2ddi
 ** ddiindexdb_sync_study
 *** test-ddiindexdb_sync_study
 #+name:ddiindexdb_sync_study
@@ -726,6 +725,8 @@ function (hostip = NA, db = NA, user = NA, p = NA, os = "linux",
 
 #+end_src
 
+** DEPRECATED df2ddi
+** DEPRECATED sql_insert
 ** fixGeom
 *** test-fixGeom
 #+name:fixGeom
@@ -770,276 +771,6 @@ function (hostip = NA, db = NA, user = NA, p = NA, os = "linux",
 ################################################################
 # name:fixGeom
 
-#+end_src
-
-** sql_tsfill
-*** test-sql_tsfill
-#+name:sql_tsfill
-#+begin_src R :session *R* :tangle tests/test-sql_tsfill.r :exports none :eval no
-  ################################################################
-  # name:sql_tsfill
-  # # Example use FillCategoryTimeSeries
-  # FillTest.csv is a file containing incomplete values for table with columns factorA, factorB, and value
-  source("../R/sql_tsfill.r")
-  require(sqldf)
-  #sparseTable <- read.csv("../FillTest.csv")
-  sparseTable <- "factorA, factorB, value
-  A, X, 1
-  A, Z, 2
-  B, Y, 3
-  "
-  tableIn <- read.csv(textConnection(sparseTable))
-  variable1 <- as.data.frame(toupper(letters[1:4]))
-  names(variable1) <- 'factorA'
-  
-  variable2 <- as.data.frame(c(1:3))
-  names(variable2) <- 'factorB'
-  
-  filledTable <- sql_tsfill(tableIn, "value", -1, variable1, variable2)
-  #filledTable
-  
-  correct <- "factorA, factorB, value
-  A,       1,    -1
-  A,       2,    -1
-  A,       3,    -1
-  B,       1,    -1
-  B,       2,    -1
-  B,       3,    -1
-  C,       1,    -1
-  C,       2,    -1
-  C,       3,    -1
-  D,       1,    -1
-  D,       2,    -1
-  D,       3,    -1
-  "
-  correct <- read.csv(textConnection(correct), stringsAsFactors = FALSE)
-  #str(correct)
-  #str(filledTable)
-  test_that('tsfill returns correct',
-            {
-              expect_that(identical(filledTable, correct), is_true())
-            }
-  )
-  
-#+end_src
-*** R-sql_tsfill
-#+name:sql_tsfill
-#+begin_src R :session *R* :tangle R/sql_tsfill.r :exports none :eval no
-################################################################
-# name:sql_tsfill
-# NB see http://www.ats.ucla.edu/stat/stata/faq/fill_down.htm
-# fills a variable in a table for missing combinations of variable1 ... variableN
-# returns filled table
-# 'variableName' to be filled
-# 'fillValue' for filled variable 
-# 'variable1' values for category variable 1, where names(variable1) is the name of variable1
-# variable2, ...,  variableN - values and names of category variable 2 ... N
-sql_tsfill <- function(tableIn, variableName, fillValue, variable1, ...)
-{
-  argumentNames <- c(deparse(substitute(variable1)), sapply(substitute(list(...))[-1], deparse))
-  argumentNames <- paste(collapse = ", ", argumentNames)
-  
-  categoryExpression <- paste(sep = "", "t1.", names(variable1) ," = t2.", names(variable1))
-  otherVariables <- list(...)
-  for(variableIndex in 1:length(otherVariables)) 
-  {
-    variable <- otherVariables[[variableIndex]]
-    categoryExpression <- paste(sep="", categoryExpression, "\r\n", " and ", "t1.", names(variable), " = t2.", names(variable))
-  }
-  
-  tableName <- deparse(substitute(tableIn))
-  case <- paste(sep = "", "case when ", variableName, " is null then ", fillValue, " else ", variableName, " end")
-  joinExpression <- paste(sep = "", "(select * from ", argumentNames,") ", "\r\n", "t1 left join ", tableName, " t2 on ", "\r\n", categoryExpression)
-  sql <- paste(sep = "", "select t1.*, ", "\r\n", case, "\r\n", " as ", variableName, " from ", "\r\n", joinExpression)
-  
-  tableOut <-  sqldf(sql, drv = 'SQLite')
-  
-  return(tableOut)
-}
-
-
-
-#+end_src
-*** man-sql_tsfill
-#+name:sql_tsfill
-#+begin_src R :session *R* :tangle no :exports none :eval no
-################################################################
-# name:sql_tsfill
-
-#+end_src
-
-*** COMMENT versions
-**** Ian's orig src-FillCategoryTimeSeries
-#+name:FillCategoryTimeSeries
-#+begin_src R :session *R* :tangle no :exports none :eval no
-################################################################
-# name:FillCategoryTimeSeries
-
-# fills a variable in a table for missing combinations of variable1 ... variableN
-# returns filled table
-# 'variableName' to be filled
-# 'fillValue' for filled variable 
-# 'variable1' values for category variable 1, where names(variable1) is the name of variable1
-# variable2, ...,  variableN - values and names of category variable 2 ... N
-FillCategoryTimeSeries<-function(tableIn, variableName, fillValue, variable1, ...)
-{
-  argumentNames <- c(deparse(substitute(variable1)), sapply(substitute(list(...))[-1], deparse))
-  argumentNames <- paste(collapse = ", ", argumentNames)
-  
-  categoryExpression <- paste(sep = "", "t1.", names(variable1) ," = t2.", names(variable1))
-  otherVariables <- list(...)
-  for(variableIndex in 1:length(otherVariables)) 
-  {
-    variable <- otherVariables[[variableIndex]]
-    categoryExpression <- paste(sep="", categoryExpression, "\r\n", " and ", "t1.", names(variable), " = t2.", names(variable))
-  }
-  
-  tableName <- deparse(substitute(tableIn))
-  case <- paste(sep = "", "case when ", variableName, " is null then ", fillValue, " else ", variableName, " end")
-  joinExpression <- paste(sep = "", "(select * from ", argumentNames,") ", "\r\n", "t1 left join ", tableName, " t2 on ", "\r\n", categoryExpression)
-  sql <- paste(sep = "", "select t1.*, ", "\r\n", case, "\r\n", " as ", variableName, " from ", "\r\n", joinExpression)
-  
-  tableOut <-  sqldf(sql, drv = 'SQLite')
-  
-  return(tableOut)
-}
-
-# # Example use FillCategoryTimeSeries
-# # FillTest.csv is a file containing incomplete values for table with columns factorA, factorB, and value
-# 
-# sparseTable <- read.csv("FillTest.csv") 
-# 
-# variable1 = as.data.frame(toupper(letters[1:4]))
-# names(variable1) <- 'factorA'
-# 
-# variable2 =  as.data.frame(c(1:3))
-# names(variable2) <- 'factorB'
-# 
-# filledTable = FillCategoryTimeSeries(tableIn, "value", -1, variable1, variable2)
-# 
-
-
-#+end_src
-
-** getPassword
-*** test-getPassword
-#+name:getPassword
-#+begin_src R :session *R* :tangle tests/test-getPassword.r :exports none :eval no
-source("../R/getPassword.r")
-test_that('password returns string with characters', {
-  expect_that(nchar(getPassword(remote = T))>0, is_true())
-#  expect_that(nchar(getPassword(remote = F))>0, is_true())
-  # getPassword(remote = T))
-  # expect_that(is.character(getPassword(remote = T)), is_true)
-})
-
-
-# dev tests
-# getPassword(remote = T)
-# getPassword(remote = F)
-#+end_src
-*** R-getPassword
-#+name:getPassword
-#+begin_src R :session *R* :tangle R/getPassword.r :exports none :eval no
-
-###########################################################################
-# newnode: getPassword
-getPassword <- function(remote = F){
-  if(remote == F){
-   require(tcltk)
-   tt <- tktoplevel()
-   pass=tclVar('')
-   label.widget <- tklabel(tt, text='Enter Password')
-   password.widget <- tkentry(tt,show='*',textvariable=pass)
-   ok <- tkbutton(tt,text='Ok',command=function()tkdestroy(tt))
-   tkpack(label.widget, password.widget,ok)
-   tkwait.window(tt)
-   return(tclvalue(pass))
- } else {
-   pass <- readline('Type your password into the console: ')
-   return(pass)
- }
-}
-
-
-# pwd <- getPassword()
-
-#+end_src
-*** man-getPassword
-#+name:getPassword
-#+begin_src R :session *R* :tangle man/getPassword.Rd :exports none :eval no
-\name{getPassword}
-\alias{getPassword}
-%- Also NEED an '\alias' for EACH other topic documented here.
-\title{
-getPassword
-}
-\description{
-getPassword
-}
-\usage{
-getPassword(remote = F)
-}
-%- maybe also 'usage' for other objects documented here.
-\arguments{
-  \item{remote}{
-%%     ~~Describe \code{remote} here~~
-}
-}
-\details{
-%%  ~~ If necessary, more details than the description above ~~
-}
-\value{
-%%  ~Describe the value returned
-%%  If it is a LIST, use
-%%  \item{comp1 }{Description of 'comp1'}
-%%  \item{comp2 }{Description of 'comp2'}
-%% ...
-}
-\references{
-%% ~put references to the literature/web site here ~
-}
-\author{
-ivanhanigan
-}
-\note{
-%%  ~~further notes~~
-}
-
-%% ~Make other sections like Warning with \section{Warning }{....} ~
-
-\seealso{
-%% ~~objects to See Also as \code{\link{help}}, ~~~
-}
-\examples{
-##---- Should be DIRECTLY executable !! ----
-##-- ==>  Define data, use random,
-##--	or do  help(data=index)  for the standard data sets.
-
-## The function is currently defined as
-function (remote = F) 
-{
-    if (remote == F) {
-        require(tcltk)
-        tt <- tktoplevel()
-        pass = tclVar("")
-        label.widget <- tklabel(tt, text = "Enter Password")
-        password.widget <- tkentry(tt, show = "*", textvariable = pass)
-        ok <- tkbutton(tt, text = "Ok", command = function() tkdestroy(tt))
-        tkpack(label.widget, password.widget, ok)
-        tkwait.window(tt)
-        return(tclvalue(pass))
-    }
-    else {
-        pass <- readline("Type your password into the console: ")
-        return(pass)
-    }
-  }
-}
-% Add one or more standard keywords, see file 'KEYWORDS' in the
-% R documentation directory.
-\keyword{ ~kwd1 }
-\keyword{ ~kwd2 }% __ONLY ONE__ keyword per line
 #+end_src
 
 ** get_passwordTable
@@ -1187,6 +918,127 @@ function (remote = F)
 ################################################################
 # name:get_pgpass
 
+#+end_src
+
+** getPassword
+*** test-getPassword
+#+name:getPassword
+#+begin_src R :session *R* :tangle tests/test-getPassword.r :exports none :eval no
+source("../R/getPassword.r")
+test_that('password returns string with characters', {
+  expect_that(nchar(getPassword(remote = T))>0, is_true())
+#  expect_that(nchar(getPassword(remote = F))>0, is_true())
+  # getPassword(remote = T))
+  # expect_that(is.character(getPassword(remote = T)), is_true)
+})
+
+
+# dev tests
+# getPassword(remote = T)
+# getPassword(remote = F)
+#+end_src
+*** R-getPassword
+#+name:getPassword
+#+begin_src R :session *R* :tangle R/getPassword.r :exports none :eval no
+
+###########################################################################
+# newnode: getPassword
+getPassword <- function(remote = F){
+  if(remote == F){
+   require(tcltk)
+   tt <- tktoplevel()
+   pass=tclVar('')
+   label.widget <- tklabel(tt, text='Enter Password')
+   password.widget <- tkentry(tt,show='*',textvariable=pass)
+   ok <- tkbutton(tt,text='Ok',command=function()tkdestroy(tt))
+   tkpack(label.widget, password.widget,ok)
+   tkwait.window(tt)
+   return(tclvalue(pass))
+ } else {
+   pass <- readline('Type your password into the console: ')
+   return(pass)
+ }
+}
+
+
+# pwd <- getPassword()
+
+#+end_src
+*** man-getPassword
+#+name:getPassword
+#+begin_src R :session *R* :tangle man/getPassword.Rd :exports none :eval no
+\name{getPassword}
+\alias{getPassword}
+%- Also NEED an '\alias' for EACH other topic documented here.
+\title{
+getPassword
+}
+\description{
+getPassword
+}
+\usage{
+getPassword(remote = F)
+}
+%- maybe also 'usage' for other objects documented here.
+\arguments{
+  \item{remote}{
+%%     ~~Describe \code{remote} here~~
+}
+}
+\details{
+%%  ~~ If necessary, more details than the description above ~~
+}
+\value{
+%%  ~Describe the value returned
+%%  If it is a LIST, use
+%%  \item{comp1 }{Description of 'comp1'}
+%%  \item{comp2 }{Description of 'comp2'}
+%% ...
+}
+\references{
+%% ~put references to the literature/web site here ~
+}
+\author{
+ivanhanigan
+}
+\note{
+%%  ~~further notes~~
+}
+
+%% ~Make other sections like Warning with \section{Warning }{....} ~
+
+\seealso{
+%% ~~objects to See Also as \code{\link{help}}, ~~~
+}
+\examples{
+##---- Should be DIRECTLY executable !! ----
+##-- ==>  Define data, use random,
+##--	or do  help(data=index)  for the standard data sets.
+
+## The function is currently defined as
+function (remote = F) 
+{
+    if (remote == F) {
+        require(tcltk)
+        tt <- tktoplevel()
+        pass = tclVar("")
+        label.widget <- tklabel(tt, text = "Enter Password")
+        password.widget <- tkentry(tt, show = "*", textvariable = pass)
+        ok <- tkbutton(tt, text = "Ok", command = function() tkdestroy(tt))
+        tkpack(label.widget, password.widget, ok)
+        tkwait.window(tt)
+        return(tclvalue(pass))
+    }
+    else {
+        pass <- readline("Type your password into the console: ")
+        return(pass)
+    }
+  }
+}
+% Add one or more standard keywords, see file 'KEYWORDS' in the
+% R documentation directory.
+\keyword{ ~kwd1 }
+\keyword{ ~kwd2 }% __ONLY ONE__ keyword per line
 #+end_src
 
 ** LinuxOperatingSystem
@@ -2321,11 +2173,15 @@ load2postgres <- function(inputfilepath,schema,tablename,pk=NULL,header=TRUE,pri
   
   ch <- connect2postgres2("ewedb")
   test_that("lists postgis table", {
-    expect_that(nrow(pgListTables(conn=ch, schema="public",
-                                  pattern="spatial_ref_s")) == 1,
+    expect_that(nrow(
+                     pgListTables(conn=ch, schema="public",
+                                  table="spatial_ref_s")
+                     ) == 0,
                  is_true())
-     expect_that(nrow(pgListTables(conn=ch, schema='public',
-                                   pattern='elmoreJames')) == 0,
+     expect_that(nrow(
+                      pgListTables(conn=ch, schema='public',
+                                   table='spatial_ref_s', match = FALSE)
+                      ) == 1,
                  is_true())
   })
   
@@ -2351,12 +2207,12 @@ load2postgres <- function(inputfilepath,schema,tablename,pk=NULL,header=TRUE,pri
 #+end_src
 *** R-pgListTables
 #+name:pgListTables
-#+begin_src R :session *R* :tangle R/pgListTables.r :exports none :eval no
+#+begin_src R :session *R* :tangle R/pgListTables.r :exports none :eval yes
   ################################################################
   # name:pgListTables
-  pgListTables <- function(conn, schema, pattern = NA)
+  pgListTables <- function(conn, schema, table=NA, match = TRUE)
   {
-    if(!is.na(pattern))
+    if(!is.na(table) & match == TRUE)
     {
       tables <- dbGetQuery(conn,
                            paste("select   c.relname, nspname
@@ -2364,7 +2220,16 @@ load2postgres <- function(inputfilepath,schema,tablename,pk=NULL,header=TRUE,pri
                          LEFT JOIN pg_catalog.pg_namespace n
                          ON n.oid = c.relnamespace
                          where (c.relkind IN ('r','','v'))
-                          and (nspname = '",schema,"' and relname like '%",pattern,"%')", sep = "")
+                          and (nspname = '",schema,"' and relname like '",table,"')", sep = "")
+      )
+    } else if(!is.na(table) & match == FALSE) {    
+      tables <- dbGetQuery(conn,
+                           paste("select   c.relname, nspname
+                         FROM pg_catalog.pg_class c
+                         LEFT JOIN pg_catalog.pg_namespace n
+                         ON n.oid = c.relnamespace
+                         where (c.relkind IN ('r','','v'))
+                          and (nspname = '",schema,"' and relname like '%",table,"%')", sep = "")
       )
     } else {
       tables <- dbGetQuery(conn,
@@ -2378,7 +2243,7 @@ load2postgres <- function(inputfilepath,schema,tablename,pk=NULL,header=TRUE,pri
     }
   
   #   tables <- tables[grep(schema,tables$nspname),]
-  #    tables <- tables[grep(pattern, tables$relname),]
+  #    tables <- tables[grep(table, tables$relname),]
     if(nrow(tables) > 0)
       {
         tables <- tables[order(tables$relname),]
@@ -2388,6 +2253,9 @@ load2postgres <- function(inputfilepath,schema,tablename,pk=NULL,header=TRUE,pri
   }
   
 #+end_src
+
+#+RESULTS: pgListTables
+
 *** man-pgListTables
 #+name:pgListTables
 #+begin_src R :session *R* :tangle no :exports none :eval no
@@ -2421,6 +2289,58 @@ load2postgres <- function(inputfilepath,schema,tablename,pk=NULL,header=TRUE,pri
   
     return(sql)
     }
+
+#+end_src
+
+** points2geom
+*** test-points2geom
+#+name:points2geom
+#+begin_src R :session *R* :tangle no :exports none :eval no
+################################################################
+# name:points2geom
+
+#+end_src
+*** R-points2geom
+#+name:points2geom
+#+begin_src R :session *R* :tangle R/points2geom.r :exports none :eval no
+  ################################################################
+  # name:points2geom
+  points2geom <- function(schema,tablename,col_lat,col_long, srid="4283"){
+    table <- sprintf("%s.%s",schema,tablename)
+  
+    sql1 <- sprintf(
+      "SELECT AddGeometryColumn('%s', '%s', 'the_geom', %s, 'POINT', 2);\n",
+      schema,tablename, srid)
+  
+    sql2 <- sprintf(
+      "ALTER TABLE %s ADD CONSTRAINT geometry_valid_check CHECK (st_isvalid(the_geom));\n" ,
+      table)
+  
+    sql3 <- sprintf("
+                UPDATE %s
+                SET the_geom=st_GeomFromText(
+                'POINT('||
+                %s ||
+                ' '||
+                %s ||')'
+                ,%s);\n",table,col_long,col_lat, srid)
+
+   sql4 <- paste("alter table ",schema,".",tablename," add column gid serial primary key;
+                 ALTER TABLE ",schema,".",tablename," ALTER COLUMN the_geom SET NOT NULL;
+                 CREATE INDEX ",tablename,"_gist on ",schema,".",tablename," using GIST(the_geom);
+                 ALTER TABLE ",schema,".",tablename," CLUSTER ON ",tablename,"_gist;
+                 ", sep = "")
+                 
+  
+    sql <- paste(sql1, sql2, sql3, sql4, sep = "\n")
+  }
+  
+#+end_src
+*** man-points2geom
+#+name:points2geom
+#+begin_src R :session *R* :tangle no :exports none :eval no
+################################################################
+# name:points2geom
 
 #+end_src
 
@@ -2596,58 +2516,6 @@ load2postgres <- function(inputfilepath,schema,tablename,pk=NULL,header=TRUE,pri
 # name:postgis_raster_extract
 
 #+end_src
-** points2geom
-*** test-points2geom
-#+name:points2geom
-#+begin_src R :session *R* :tangle no :exports none :eval no
-################################################################
-# name:points2geom
-
-#+end_src
-*** R-points2geom
-#+name:points2geom
-#+begin_src R :session *R* :tangle R/points2geom.r :exports none :eval no
-  ################################################################
-  # name:points2geom
-  points2geom <- function(schema,tablename,col_lat,col_long, srid="4283"){
-    table <- sprintf("%s.%s",schema,tablename)
-  
-    sql1 <- sprintf(
-      "SELECT AddGeometryColumn('%s', '%s', 'the_geom', %s, 'POINT', 2);\n",
-      schema,tablename, srid)
-  
-    sql2 <- sprintf(
-      "ALTER TABLE %s ADD CONSTRAINT geometry_valid_check CHECK (st_isvalid(the_geom));\n" ,
-      table)
-  
-    sql3 <- sprintf("
-                UPDATE %s
-                SET the_geom=st_GeomFromText(
-                'POINT('||
-                %s ||
-                ' '||
-                %s ||')'
-                ,%s);\n",table,col_long,col_lat, srid)
-
-   sql4 <- paste("alter table ",schema,".",tablename," add column gid serial primary key;
-                 ALTER TABLE ",schema,".",tablename," ALTER COLUMN the_geom SET NOT NULL;
-                 CREATE INDEX ",tablename,"_gist on ",schema,".",tablename," using GIST(the_geom);
-                 ALTER TABLE ",schema,".",tablename," CLUSTER ON ",tablename,"_gist;
-                 ", sep = "")
-                 
-  
-    sql <- paste(sql1, sql2, sql3, sql4, sep = "\n")
-  }
-  
-#+end_src
-*** man-points2geom
-#+name:points2geom
-#+begin_src R :session *R* :tangle no :exports none :eval no
-################################################################
-# name:points2geom
-
-#+end_src
-
 ** readGDAL2
 *** test-readGDAL2
 #+name:readGDAL2
@@ -2793,54 +2661,373 @@ load2postgres <- function(inputfilepath,schema,tablename,pk=NULL,header=TRUE,pri
 
 #+end_src
 
-** DEPRECATED sql_insert
-** sql_subset_into
-*** test-sql_subset_into
-#+name:test-sql_subset_into
-# tests/test-sql_subset_into.r
+** sql_add_column
+*** test-sql_add_column
+#+name:sql_add_column
 #+begin_src R :session *R* :tangle no :exports none :eval no
-  source("R/connect2postgres.r")
-  source("R/sql_subset.r")
-  source("R/sql_subset_into.r")
-  source("R/pgListTables.r")
+  ################################################################
+  # name:sql_add_column
+  # select *
+  # from health_forecasting.hf_exposure
+  #cat(
+  source("./R/sql_add_column.r")
   
-  ch <- connect2postgres('115.146.84.135', db='ewedb', user='gislibrary', p='gislibrary')
-  sql_subset_into(ch, 'dbsize',into_table='temp101', select = '*', eval=T)
-  sql_subset(ch, 'temp101', eval = T)
-  dbSendQuery(ch, 'drop table temp101')
+   sql_add_column(ch, x= "airquality", from_table = "airquality2",
+                   col_name = "new",
+                   eval = T, variable1 = "month",
+              ...="day")
+   sql_subset(ch, "airquality", limit = 6, eval = T)
+  #)
+  dbSendQuery(ch, "alter table airquality drop column new")
   
 #+end_src
-
-
-*** R-sql_subset_into
-#+name:sql_subset_into
-#+begin_src R :session *R* :tangle R/sql_subset_into.r :exports none :eval no
-  sql_subset_into <- function(conn, x, ..., into_schema = "public", into_table, eval = FALSE, drop = TRUE)
-  {
-    sql <- sql_subset(ch, x=x, ..., eval=F)
-    sql <- gsub('from', paste("into ", into_schema, ".", into_table, "\nfrom ", sep = ""), sql)
-    if(eval)
+*** R-sql_add_column
+#+name:sql_add_column
+#+begin_src R :session *R* :tangle R/sql_add_column.r :exports none :eval no
+  ################################################################
+  # name:sql_add_column
+  #Adding a new column with data from a join
+  #http://stackoverflow.com/questions/8097384/adding-a-new-column-with-data-from-a-join
+  # alter table A add column3 [yourdatatype];
+  
+  # update A set column3 = (select column3 from B where A.Column1 = B.Column2)
+  #   where exists (select column3 from B where A.Column1 = B.Column2)
+  
+    sql_add_column <- function(conn, x, from_table, col_name, col_type = "numeric", eval = F, variable1, ...)
     {
-      exists <- pgListTables(conn, into_schema, into_table)
-      if(nrow(exists) > 0 & drop)
-        {
-          dbSendQuery(conn, paste("drop table ", into_schema, ".",
-                                  into_table, sep =""))
-        } else if (nrow(exists) > 0 & !drop)
-          {
-            stop("Table exists. Aborting.")
-          }
-    
-      dbSendQuery(conn, sql)
-      #dat <- dbGetQuery(conn, paste("select * from ", into_schema, ".", into_table, sep = ""))
-      #return(dat)
-    } else {
-      return(sql)
+  
+      argumentNames <- c(deparse(substitute(variable1)), sapply(substitute(list(...))[-1], deparse))
+      argumentNames <- paste(collapse = ", ", argumentNames)
+  
+      categoryExpression <- paste(sep = "", x, ".", variable1 ," = ",from_table,".", variable1)
+      otherVariables <- list(...)
+      for(variableIndex in 1:length(otherVariables))
+      {
+        variable <- otherVariables[[variableIndex]]
+        categoryExpression <- paste(sep="", categoryExpression, "\r\n", " and ", x, ".", variable, " = ",from_table,".", variable)
+      }
+  
+  #     categoryExpression2 <- paste(sep = "", x,".", variable1 ," = foo.", variable1)
+  # #    otherVariables <- list(...)
+  #     for(variableIndex in 1:length(otherVariables))
+  #     {
+  #       variable <- otherVariables[[variableIndex]]
+  #       categoryExpression2 <- paste(sep="", categoryExpression2,
+  #                                    "\r\n", " and ", x, ".", variable, " = foo.", variable)
+  #     }
+  
+      # variables <- c(variable1, otherVariables)
+      # variables <- paste("t1.",variables, sep = "", collapse = ",")
+  
+  
+      sql <- paste("alter table ",x," add ",col_name," ",col_type,";
+      update ",x,"
+      set  ",col_name," = (
+      select  ",col_name,"
+      from ", from_table, "
+      where ",
+      categoryExpression, "
+      )
+      ", sep = "")
+  
+      if(!eval)
+      {
+        return(sql)
+      } else {
+  
+        dbSendQuery(ch, sql)
+      }
+  
     }
-  }
-    
+  
+#+end_src
+*** man-sql_add_column
+#+begin_src R :session *R* :tangle no :exports none :eval no
+################################################################
+
+
+#+end_src
+** sql_add_lag
+*** test-sql_add_lag
+#+name:sql_add_column
+#+begin_src R :session *R* :tangle no :exports none :eval no
+  ################################################################
+  # name:sql_add_lag
+  # select *
+  # from health_forecasting.hf_exposure
+  #cat(
+  for(lag_i in 4:6)
+    {
+    sql_add_lag(ch, x= "tempfoobar1", col_name = "death", shift = lag_i,
+              col_type = "integer", eval = T, variable1 = "cityname",
+              ...="agecat")
+    }
+  #)
+  
+#+end_src
+*** R-sql_add_lag
+#+name:sql_add_lag
+#+begin_src R :session *R* :tangle R/sql_add_lag.r :exports none :eval no
+  ################################################################
+  # name:sql_add_lag
+    sql_add_lag <- function(conn, x, col_name, shift = 1, col_type =
+                            "numeric", eval = F, variable1, ...)
+    {
+  
+      argumentNames <- c(deparse(substitute(variable1)), sapply(substitute(list(...))[-1], deparse))
+      argumentNames <- paste(collapse = ", ", argumentNames)
+  
+      categoryExpression <- paste(sep = "", "t1.", variable1 ," = t2.", variable1)
+      otherVariables <- list(...)
+      for(variableIndex in 1:length(otherVariables))
+      {
+        variable <- otherVariables[[variableIndex]]
+        categoryExpression <- paste(sep="", categoryExpression, "\r\n", " and ", "t1.", variable, " = t2.", variable)
+      }
+  
+      categoryExpression2 <- paste(sep = "", x,".", variable1 ," = foo.", variable1)
+  #    otherVariables <- list(...)
+      for(variableIndex in 1:length(otherVariables))
+      {
+        variable <- otherVariables[[variableIndex]]
+        categoryExpression2 <- paste(sep="", categoryExpression2,
+                                     "\r\n", " and ", x, ".", variable, " = foo.", variable)
+      }
+  
+      variables <- c(variable1, otherVariables)
+      variables <- paste("t1.",variables, sep = "", collapse = ",")
+  
+  
+      sql <- paste("alter table ",x," add ",col_name,"_lag",shift," ",col_type,";
+      update ",x,"
+      set  ",col_name,"_lag",shift," = (
+      select  ",col_name,"_lag",shift,"
+      from
+      (
+      select ",variables,", t1.date, t2.",col_name," as ",col_name,"_lag",shift,"
+                   from ",x," t1
+                   left join
+                   ",x," t2
+                   on ",
+      categoryExpression
+                   ,"
+      and t1.date = t2.date + ",shift,"
+      ) foo
+      where ",
+      categoryExpression2, "
+      and ",x,".date = foo.date
+      )
+                   ", sep = "")
+  
+      if(!eval)
+      {
+        return(sql)
+      } else {
+  
+        dbSendQuery(ch, sql)
+      }
+  
+    }
+  
+#+end_src
+*** dev-code
+#+begin_src R :session *R* :tangle no :exports none :eval no
+################################################################
+
+alter table tempfoobar1 add death_lag2 integer;
+
+update tempfoobar1 
+set death_lag2 = (
+select death_lag2 
+from 
+(
+    select t1.cityname, t1.date, t1.agecat, t2.death as death_lag2
+                 from tempfoobar1 t1
+                 left join
+                 tempfoobar1 t2
+                 on t1.cityname = t2.cityname
+    and t1.agecat = t2.agecat
+    and t1.date = t2.date + 2
+) tempfoobar2 
+where tempfoobar1.cityname = tempfoobar2.cityname
+and tempfoobar1.agecat = tempfoobar2.agecat
+and tempfoobar1.date = tempfoobar2.date
+) 
+
+#+end_src
+*** man-sql_add_lag
+#+begin_src R :session *R* :tangle no :exports none :eval no
+################################################################
+
+
 #+end_src
 
+** sql_join
+*** test-sql_join
+#+name:sql_join
+#+begin_src R :session *R:2* :tangle no :exports none :eval no
+  ################################################################
+  # name:sql_join
+  require(swishdbtools)
+  ewedb <- connect2postgres2("ewedb")
+  
+  source("R/sql_join.r")
+  
+  
+  first <- ddply(baseball, "id", summarise, first = min(year))
+  #     system.time(
+         b2 <- merge(baseball, first, by = "id", all.x = TRUE)
+  #       )
+       system.time(b3 <- join(baseball, first, by = "id"))
+  
+  
+  first2 <- sql_summarise(ewedb, "baseball", "id", "year", "min", eval =T)
+  head(first); head(first2)
+  dbWriteTable(ewedb, "baseball_first", first2, row.names = F)
+  debug(sql_join)
+  sql <- sql_join(
+    conn = ewedb
+    ,
+    select.x = "*"
+    ,
+    select.y = "*"
+    ,
+    x = "baseball"
+    ,
+    y = "baseball_first"
+    ,
+    by = "id"
+    ,
+    by.x = by
+    ,
+    by.y = by
+    ,
+    type = "left"
+    ,
+    eval = FALSE
+    ,
+    check = T
+    )
+  cat(sql)
+  dat <- dbGetQuery(ewedb, sql)
+  dat <- arrange(dat, id, year)
+  head(dat)
+  b2 <- arrange(b2, id, year)
+  head(b2)
+  
+#+end_src
+*** R-sql_join
+#+name:sql_join
+#+begin_src R :session *R* :tangle R/sql_join.r :exports none :eval no
+   ################################################################
+   # name:sql_join
+     sql_join <- function(conn, x, y, select.x = "*", select.y = "*", by, by.x = by, by.y = by,
+                                 type = "left", eval = FALSE, check = T)
+     {
+       # assume ch exists
+       if(length(grep("\\.",x)) == 0)
+         {
+           schema_x <- "public"
+           table_x <- x
+         } else {
+           schema_x <- strsplit(x, "\\.")[[1]][1]
+           table_x <- strsplit(x, "\\.")[[1]][2]
+         }
+       if(length(grep("\\.",y)) == 0)
+         {
+           schema_y <- "public"
+           table_y <- y
+         } else {
+           schema_y <- strsplit(y, "\\.")[[1]][1]
+           table_y <- strsplit(y, "\\.")[[1]][2]
+         }
+   
+   
+   
+       if(check)
+         {
+         exists <- pgListTables(conn, schema_x, table_x)
+         if(nrow(exists) == 0)
+         {
+           stop("Table x doesn't exist.")
+         }
+   
+         }
+   
+   ## check cols exist in both and then paste together
+       if(check & select.x=="*")
+         {
+           select_x <- names(
+                          dbGetQuery(conn,
+                           paste("select ", select.x, " from ",
+                           schema_x, ".",
+                           table_x, " limit 1",
+                           sep = ""))
+                          )
+   
+         } else { select_x <- select.x }
+   #    select_x
+       if(check & select.y=="*")
+         {
+           select_y <- names(
+                          dbGetQuery(conn,
+                           paste("select ", select.y, " from ",
+                           schema_y, ".",
+                           table_y, " limit 1",
+                           sep = ""))
+                          )
+   
+         } else { select_y <- select.y }
+   #    select_y
+   
+       select.x <- paste("t1.", select_x,collapse = ", ", sep = "")
+       for(.by in by)
+         {
+           recordIndex <- which(.by == select_y)
+           select_y <- select_y[-recordIndex]
+         }
+       select.y <- paste("t2.",select_y, collapse = ", ", sep = "")
+   
+   #    select
+       sqlquery <- paste("select ", select.x, ", ", select.y ,
+                         "\nfrom ",
+                         schema_x , ".",
+                         table_x , " t1\n",
+                         type, " join\n",
+                         schema_y , ".",
+                         table_y , " t2\n",
+                         "on t1.", by.x, " = t2.", by.y,
+                         sep = "")
+  #  cat(sqlquery)
+       ## if(!is.na(subset))
+       ##   {
+       ##     sqlquery <- paste(sqlquery, "where ", subset, "\n", sep = "")
+       ##   }
+   
+       ## if(limit > 0)
+       ##   {
+       ##     sqlquery <- paste(sqlquery, "limit ", limit, "\n", sep = "")
+       ##   }
+   
+       if(eval)
+         {
+           dat <- dbGetQuery(conn,sqlquery)
+           return(dat)
+         } else {
+           return(sqlquery)
+         }
+   
+   
+     }
+   
+#+end_src
+*** man-sql_join
+#+name:sql_join
+#+begin_src R :session *R* :tangle no :exports none :eval no
+################################################################
+# name:sql_join
+
+#+end_src
 ** sql_subset
 *** test-sql_subset.r
 #+name:test-sql_subset.r
@@ -3050,6 +3237,53 @@ sql <- sql_subset(conn=ch, x='spatial_ref_sys',
 
 #+end_src
 
+** sql_subset_into
+*** test-sql_subset_into
+#+name:test-sql_subset_into
+# tests/test-sql_subset_into.r
+#+begin_src R :session *R* :tangle no :exports none :eval no
+  source("R/connect2postgres.r")
+  source("R/sql_subset.r")
+  source("R/sql_subset_into.r")
+  source("R/pgListTables.r")
+  
+  ch <- connect2postgres('115.146.84.135', db='ewedb', user='gislibrary', p='gislibrary')
+  sql_subset_into(ch, 'dbsize',into_table='temp101', select = '*', eval=T)
+  sql_subset(ch, 'temp101', eval = T)
+  dbSendQuery(ch, 'drop table temp101')
+  
+#+end_src
+
+
+*** R-sql_subset_into
+#+name:sql_subset_into
+#+begin_src R :session *R* :tangle R/sql_subset_into.r :exports none :eval no
+  sql_subset_into <- function(conn, x, ..., into_schema = "public", into_table, eval = FALSE, drop = TRUE)
+  {
+    sql <- sql_subset(ch, x=x, ..., eval=F)
+    sql <- gsub('from', paste("into ", into_schema, ".", into_table, "\nfrom ", sep = ""), sql)
+    if(eval)
+    {
+      exists <- pgListTables(conn, into_schema, into_table)
+      if(nrow(exists) > 0 & drop)
+        {
+          dbSendQuery(conn, paste("drop table ", into_schema, ".",
+                                  into_table, sep =""))
+        } else if (nrow(exists) > 0 & !drop)
+          {
+            stop("Table exists. Aborting.")
+          }
+    
+      dbSendQuery(conn, sql)
+      #dat <- dbGetQuery(conn, paste("select * from ", into_schema, ".", into_table, sep = ""))
+      #return(dat)
+    } else {
+      return(sql)
+    }
+  }
+    
+#+end_src
+
 ** sql_summarise
 *** test-sql_summarise
 #+name:sql_summarise
@@ -3177,172 +3411,6 @@ sql <- sql_subset(conn=ch, x='spatial_ref_sys',
 
 #+end_src
 
-** sql_join
-*** test-sql_join
-#+name:sql_join
-#+begin_src R :session *R:2* :tangle no :exports none :eval no
-  ################################################################
-  # name:sql_join
-  require(swishdbtools)
-  ewedb <- connect2postgres2("ewedb")
-  
-  source("R/sql_join.r")
-  
-  
-  first <- ddply(baseball, "id", summarise, first = min(year))
-  #     system.time(
-         b2 <- merge(baseball, first, by = "id", all.x = TRUE)
-  #       )
-       system.time(b3 <- join(baseball, first, by = "id"))
-  
-  
-  first2 <- sql_summarise(ewedb, "baseball", "id", "year", "min", eval =T)
-  head(first); head(first2)
-  dbWriteTable(ewedb, "baseball_first", first2, row.names = F)
-  debug(sql_join)
-  sql <- sql_join(
-    conn = ewedb
-    ,
-    select.x = "*"
-    ,
-    select.y = "*"
-    ,
-    x = "baseball"
-    ,
-    y = "baseball_first"
-    ,
-    by = "id"
-    ,
-    by.x = by
-    ,
-    by.y = by
-    ,
-    type = "left"
-    ,
-    eval = FALSE
-    ,
-    check = T
-    )
-  cat(sql)
-  dat <- dbGetQuery(ewedb, sql)
-  dat <- arrange(dat, id, year)
-  head(dat)
-  b2 <- arrange(b2, id, year)
-  head(b2)
-  
-#+end_src
-*** R-sql_join
-#+name:sql_join
-#+begin_src R :session *R* :tangle R/sql_join.r :exports none :eval no
-   ################################################################
-   # name:sql_join
-     sql_join <- function(conn, x, y, select.x = "*", select.y = "*", by, by.x = by, by.y = by,
-                                 type = "left", eval = FALSE, check = T)
-     {
-       # assume ch exists
-       if(length(grep("\\.",x)) == 0)
-         {
-           schema_x <- "public"
-           table_x <- x
-         } else {
-           schema_x <- strsplit(x, "\\.")[[1]][1]
-           table_x <- strsplit(x, "\\.")[[1]][2]
-         }
-       if(length(grep("\\.",y)) == 0)
-         {
-           schema_y <- "public"
-           table_y <- y
-         } else {
-           schema_y <- strsplit(y, "\\.")[[1]][1]
-           table_y <- strsplit(y, "\\.")[[1]][2]
-         }
-   
-   
-   
-       if(check)
-         {
-         exists <- pgListTables(conn, schema_x, table_x)
-         if(nrow(exists) == 0)
-         {
-           stop("Table x doesn't exist.")
-         }
-   
-         }
-   
-   ## check cols exist in both and then paste together
-       if(check & select.x=="*")
-         {
-           select_x <- names(
-                          dbGetQuery(conn,
-                           paste("select ", select.x, " from ",
-                           schema_x, ".",
-                           table_x, " limit 1",
-                           sep = ""))
-                          )
-   
-         } else { select_x <- select.x }
-   #    select_x
-       if(check & select.y=="*")
-         {
-           select_y <- names(
-                          dbGetQuery(conn,
-                           paste("select ", select.y, " from ",
-                           schema_y, ".",
-                           table_y, " limit 1",
-                           sep = ""))
-                          )
-   
-         } else { select_y <- select.y }
-   #    select_y
-   
-       select.x <- paste("t1.", select_x,collapse = ", ", sep = "")
-       for(.by in by)
-         {
-           recordIndex <- which(.by == select_y)
-           select_y <- select_y[-recordIndex]
-         }
-       select.y <- paste("t2.",select_y, collapse = ", ", sep = "")
-   
-   #    select
-       sqlquery <- paste("select ", select.x, ", ", select.y ,
-                         "\nfrom ",
-                         schema_x , ".",
-                         table_x , " t1\n",
-                         type, " join\n",
-                         schema_y , ".",
-                         table_y , " t2\n",
-                         "on t1.", by.x, " = t2.", by.y,
-                         sep = "")
-  #  cat(sqlquery)
-       ## if(!is.na(subset))
-       ##   {
-       ##     sqlquery <- paste(sqlquery, "where ", subset, "\n", sep = "")
-       ##   }
-   
-       ## if(limit > 0)
-       ##   {
-       ##     sqlquery <- paste(sqlquery, "limit ", limit, "\n", sep = "")
-       ##   }
-   
-       if(eval)
-         {
-           dat <- dbGetQuery(conn,sqlquery)
-           return(dat)
-         } else {
-           return(sqlquery)
-         }
-   
-   
-     }
-   
-#+end_src
-*** man-sql_join
-#+name:sql_join
-#+begin_src R :session *R* :tangle no :exports none :eval no
-################################################################
-# name:sql_join
-
-#+end_src
 ** sql_transform
 *** test-sql_transform
 #+name:sql_transform
@@ -3454,6 +3522,155 @@ sql <- sql_subset(conn=ch, x='spatial_ref_sys',
 # name:sql_transform
 #NB prefer int and double (float8) rather than bigint and numeric
 #+end_src
+** sql_tsfill
+*** test-sql_tsfill
+#+name:sql_tsfill
+#+begin_src R :session *R* :tangle tests/test-sql_tsfill.r :exports none :eval no
+  ################################################################
+  # name:sql_tsfill
+  # # Example use FillCategoryTimeSeries
+  # FillTest.csv is a file containing incomplete values for table with columns factorA, factorB, and value
+  source("../R/sql_tsfill.r")
+  require(sqldf)
+  #sparseTable <- read.csv("../FillTest.csv")
+  sparseTable <- "factorA, factorB, value
+  A, X, 1
+  A, Z, 2
+  B, Y, 3
+  "
+  tableIn <- read.csv(textConnection(sparseTable))
+  variable1 <- as.data.frame(toupper(letters[1:4]))
+  names(variable1) <- 'factorA'
+  
+  variable2 <- as.data.frame(c(1:3))
+  names(variable2) <- 'factorB'
+  
+  filledTable <- sql_tsfill(tableIn, "value", -1, variable1, variable2)
+  #filledTable
+  
+  correct <- "factorA, factorB, value
+  A,       1,    -1
+  A,       2,    -1
+  A,       3,    -1
+  B,       1,    -1
+  B,       2,    -1
+  B,       3,    -1
+  C,       1,    -1
+  C,       2,    -1
+  C,       3,    -1
+  D,       1,    -1
+  D,       2,    -1
+  D,       3,    -1
+  "
+  correct <- read.csv(textConnection(correct), stringsAsFactors = FALSE)
+  #str(correct)
+  #str(filledTable)
+  test_that('tsfill returns correct',
+            {
+              expect_that(identical(filledTable, correct), is_true())
+            }
+  )
+  
+#+end_src
+*** R-sql_tsfill
+#+name:sql_tsfill
+#+begin_src R :session *R* :tangle R/sql_tsfill.r :exports none :eval no
+################################################################
+# name:sql_tsfill
+# NB see http://www.ats.ucla.edu/stat/stata/faq/fill_down.htm
+# fills a variable in a table for missing combinations of variable1 ... variableN
+# returns filled table
+# 'variableName' to be filled
+# 'fillValue' for filled variable 
+# 'variable1' values for category variable 1, where names(variable1) is the name of variable1
+# variable2, ...,  variableN - values and names of category variable 2 ... N
+sql_tsfill <- function(tableIn, variableName, fillValue, variable1, ...)
+{
+  argumentNames <- c(deparse(substitute(variable1)), sapply(substitute(list(...))[-1], deparse))
+  argumentNames <- paste(collapse = ", ", argumentNames)
+  
+  categoryExpression <- paste(sep = "", "t1.", names(variable1) ," = t2.", names(variable1))
+  otherVariables <- list(...)
+  for(variableIndex in 1:length(otherVariables)) 
+  {
+    variable <- otherVariables[[variableIndex]]
+    categoryExpression <- paste(sep="", categoryExpression, "\r\n", " and ", "t1.", names(variable), " = t2.", names(variable))
+  }
+  
+  tableName <- deparse(substitute(tableIn))
+  case <- paste(sep = "", "case when ", variableName, " is null then ", fillValue, " else ", variableName, " end")
+  joinExpression <- paste(sep = "", "(select * from ", argumentNames,") ", "\r\n", "t1 left join ", tableName, " t2 on ", "\r\n", categoryExpression)
+  sql <- paste(sep = "", "select t1.*, ", "\r\n", case, "\r\n", " as ", variableName, " from ", "\r\n", joinExpression)
+  
+  tableOut <-  sqldf(sql, drv = 'SQLite')
+  
+  return(tableOut)
+}
+
+
+
+#+end_src
+*** man-sql_tsfill
+#+name:sql_tsfill
+#+begin_src R :session *R* :tangle no :exports none :eval no
+################################################################
+# name:sql_tsfill
+
+#+end_src
+
+*** COMMENT versions
+**** Ian's orig src-FillCategoryTimeSeries
+#+name:FillCategoryTimeSeries
+#+begin_src R :session *R* :tangle no :exports none :eval no
+################################################################
+# name:FillCategoryTimeSeries
+
+# fills a variable in a table for missing combinations of variable1 ... variableN
+# returns filled table
+# 'variableName' to be filled
+# 'fillValue' for filled variable 
+# 'variable1' values for category variable 1, where names(variable1) is the name of variable1
+# variable2, ...,  variableN - values and names of category variable 2 ... N
+FillCategoryTimeSeries<-function(tableIn, variableName, fillValue, variable1, ...)
+{
+  argumentNames <- c(deparse(substitute(variable1)), sapply(substitute(list(...))[-1], deparse))
+  argumentNames <- paste(collapse = ", ", argumentNames)
+  
+  categoryExpression <- paste(sep = "", "t1.", names(variable1) ," = t2.", names(variable1))
+  otherVariables <- list(...)
+  for(variableIndex in 1:length(otherVariables)) 
+  {
+    variable <- otherVariables[[variableIndex]]
+    categoryExpression <- paste(sep="", categoryExpression, "\r\n", " and ", "t1.", names(variable), " = t2.", names(variable))
+  }
+  
+  tableName <- deparse(substitute(tableIn))
+  case <- paste(sep = "", "case when ", variableName, " is null then ", fillValue, " else ", variableName, " end")
+  joinExpression <- paste(sep = "", "(select * from ", argumentNames,") ", "\r\n", "t1 left join ", tableName, " t2 on ", "\r\n", categoryExpression)
+  sql <- paste(sep = "", "select t1.*, ", "\r\n", case, "\r\n", " as ", variableName, " from ", "\r\n", joinExpression)
+  
+  tableOut <-  sqldf(sql, drv = 'SQLite')
+  
+  return(tableOut)
+}
+
+# # Example use FillCategoryTimeSeries
+# # FillTest.csv is a file containing incomplete values for table with columns factorA, factorB, and value
+# 
+# sparseTable <- read.csv("FillTest.csv") 
+# 
+# variable1 = as.data.frame(toupper(letters[1:4]))
+# names(variable1) <- 'factorA'
+# 
+# variable2 =  as.data.frame(c(1:3))
+# names(variable2) <- 'factorB'
+# 
+# filledTable = FillCategoryTimeSeries(tableIn, "value", -1, variable1, variable2)
+# 
+
+
+#+end_src
+
 ** sqldf_lag
 *** test-sqldf_lag
 #+name:sqldf_lag
@@ -3506,206 +3723,5 @@ sql <- sql_subset(conn=ch, x='spatial_ref_sys',
 #+begin_src R :session *R* :tangle no :exports none :eval no
 ################################################################
 # name:sqldf_lag
-
-#+end_src
-** sql_add_lag
-*** test-sql_add_lag
-#+name:sql_add_column
-#+begin_src R :session *R* :tangle no :exports none :eval no
-  ################################################################
-  # name:sql_add_lag
-  # select *
-  # from health_forecasting.hf_exposure
-  #cat(
-  for(lag_i in 4:6)
-    {
-    sql_add_lag(ch, x= "tempfoobar1", col_name = "death", shift = lag_i,
-              col_type = "integer", eval = T, variable1 = "cityname",
-              ...="agecat")
-    }
-  #)
-  
-#+end_src
-*** R-sql_add_lag
-#+name:sql_add_lag
-#+begin_src R :session *R* :tangle R/sql_add_lag.r :exports none :eval no
-  ################################################################
-  # name:sql_add_lag
-    sql_add_lag <- function(conn, x, col_name, shift = 1, col_type =
-                            "numeric", eval = F, variable1, ...)
-    {
-  
-      argumentNames <- c(deparse(substitute(variable1)), sapply(substitute(list(...))[-1], deparse))
-      argumentNames <- paste(collapse = ", ", argumentNames)
-  
-      categoryExpression <- paste(sep = "", "t1.", variable1 ," = t2.", variable1)
-      otherVariables <- list(...)
-      for(variableIndex in 1:length(otherVariables))
-      {
-        variable <- otherVariables[[variableIndex]]
-        categoryExpression <- paste(sep="", categoryExpression, "\r\n", " and ", "t1.", variable, " = t2.", variable)
-      }
-  
-      categoryExpression2 <- paste(sep = "", x,".", variable1 ," = foo.", variable1)
-  #    otherVariables <- list(...)
-      for(variableIndex in 1:length(otherVariables))
-      {
-        variable <- otherVariables[[variableIndex]]
-        categoryExpression2 <- paste(sep="", categoryExpression2,
-                                     "\r\n", " and ", x, ".", variable, " = foo.", variable)
-      }
-  
-      variables <- c(variable1, otherVariables)
-      variables <- paste("t1.",variables, sep = "", collapse = ",")
-  
-  
-      sql <- paste("alter table ",x," add ",col_name,"_lag",shift," ",col_type,";
-      update ",x,"
-      set  ",col_name,"_lag",shift," = (
-      select  ",col_name,"_lag",shift,"
-      from
-      (
-      select ",variables,", t1.date, t2.",col_name," as ",col_name,"_lag",shift,"
-                   from ",x," t1
-                   left join
-                   ",x," t2
-                   on ",
-      categoryExpression
-                   ,"
-      and t1.date = t2.date + ",shift,"
-      ) foo
-      where ",
-      categoryExpression2, "
-      and ",x,".date = foo.date
-      )
-                   ", sep = "")
-  
-      if(!eval)
-      {
-        return(sql)
-      } else {
-  
-        dbSendQuery(ch, sql)
-      }
-  
-    }
-  
-#+end_src
-*** dev-code
-#+begin_src R :session *R* :tangle no :exports none :eval no
-################################################################
-
-alter table tempfoobar1 add death_lag2 integer;
-
-update tempfoobar1 
-set death_lag2 = (
-select death_lag2 
-from 
-(
-    select t1.cityname, t1.date, t1.agecat, t2.death as death_lag2
-                 from tempfoobar1 t1
-                 left join
-                 tempfoobar1 t2
-                 on t1.cityname = t2.cityname
-    and t1.agecat = t2.agecat
-    and t1.date = t2.date + 2
-) tempfoobar2 
-where tempfoobar1.cityname = tempfoobar2.cityname
-and tempfoobar1.agecat = tempfoobar2.agecat
-and tempfoobar1.date = tempfoobar2.date
-) 
-
-#+end_src
-*** man-sql_add_lag
-#+begin_src R :session *R* :tangle no :exports none :eval no
-################################################################
-
-
-#+end_src
-
-** sql_add_column
-*** test-sql_add_column
-#+name:sql_add_column
-#+begin_src R :session *R* :tangle no :exports none :eval no
-  ################################################################
-  # name:sql_add_column
-  # select *
-  # from health_forecasting.hf_exposure
-  #cat(
-  source("./R/sql_add_column.r")
-  
-   sql_add_column(ch, x= "airquality", from_table = "airquality2",
-                   col_name = "new",
-                   eval = T, variable1 = "month",
-              ...="day")
-   sql_subset(ch, "airquality", limit = 6, eval = T)
-  #)
-  dbSendQuery(ch, "alter table airquality drop column new")
-  
-#+end_src
-*** R-sql_add_column
-#+name:sql_add_column
-#+begin_src R :session *R* :tangle R/sql_add_column.r :exports none :eval no
-  ################################################################
-  # name:sql_add_column
-  #Adding a new column with data from a join
-  #http://stackoverflow.com/questions/8097384/adding-a-new-column-with-data-from-a-join
-  # alter table A add column3 [yourdatatype];
-  
-  # update A set column3 = (select column3 from B where A.Column1 = B.Column2)
-  #   where exists (select column3 from B where A.Column1 = B.Column2)
-  
-    sql_add_column <- function(conn, x, from_table, col_name, col_type = "numeric", eval = F, variable1, ...)
-    {
-  
-      argumentNames <- c(deparse(substitute(variable1)), sapply(substitute(list(...))[-1], deparse))
-      argumentNames <- paste(collapse = ", ", argumentNames)
-  
-      categoryExpression <- paste(sep = "", x, ".", variable1 ," = ",from_table,".", variable1)
-      otherVariables <- list(...)
-      for(variableIndex in 1:length(otherVariables))
-      {
-        variable <- otherVariables[[variableIndex]]
-        categoryExpression <- paste(sep="", categoryExpression, "\r\n", " and ", x, ".", variable, " = ",from_table,".", variable)
-      }
-  
-  #     categoryExpression2 <- paste(sep = "", x,".", variable1 ," = foo.", variable1)
-  # #    otherVariables <- list(...)
-  #     for(variableIndex in 1:length(otherVariables))
-  #     {
-  #       variable <- otherVariables[[variableIndex]]
-  #       categoryExpression2 <- paste(sep="", categoryExpression2,
-  #                                    "\r\n", " and ", x, ".", variable, " = foo.", variable)
-  #     }
-  
-      # variables <- c(variable1, otherVariables)
-      # variables <- paste("t1.",variables, sep = "", collapse = ",")
-  
-  
-      sql <- paste("alter table ",x," add ",col_name," ",col_type,";
-      update ",x,"
-      set  ",col_name," = (
-      select  ",col_name,"
-      from ", from_table, "
-      where ",
-      categoryExpression, "
-      )
-      ", sep = "")
-  
-      if(!eval)
-      {
-        return(sql)
-      } else {
-  
-        dbSendQuery(ch, sql)
-      }
-  
-    }
-  
-#+end_src
-*** man-sql_add_column
-#+begin_src R :session *R* :tangle no :exports none :eval no
-################################################################
-
 
 #+end_src
