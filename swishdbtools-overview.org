@@ -3047,6 +3047,9 @@ and tempfoobar1.date = tempfoobar2.date
   # dev tests
   source("R/sql_subset.r")
   source("R/pgListTables.r")
+  # expect to work like base R subset
+  ?subset
+  head(subset(airquality, subset = Temp > 80, select = c(Ozone, Temp)))
   ## if(!exists('p'))
   ## {
   ##   p <- getPassword()
