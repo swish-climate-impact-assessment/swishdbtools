@@ -2516,6 +2516,75 @@ load2postgres <- function(inputfilepath,schema,tablename,pk=NULL,header=TRUE,pri
 # name:postgis_raster_extract
 
 #+end_src
+** postgis_reproject
+*** R-postgis_reproject
+#+name:postgis_reproject
+#+begin_src R :session *R* :tangle R/postgis_reproject.r :exports none :eval yes
+  ################################################################
+  # name:postgis_reproject
+  postgis_reproject <- function(conn, x, srid, out_table = NA, eval = F)
+    {
+      if(length(grep("\\.",x)) == 0)
+        {
+          schema <- "public"
+          table <- x
+        } else {
+          schema <- strsplit(x, "\\.")[[1]][1]
+          table <- strsplit(x, "\\.")[[1]][2]
+        }
+      if(is.na(out_table))
+        {
+          out_table <- paste(table,"_reprojected", sep = "")
+        }
+  
+      namesList <- names(sql_subset(conn, paste(schema, table, sep = "."), eval = T))
+      namesList <- c(namesList[-c(which(namesList == "gid"))], "geom")
+  
+      sql <- sql_subset_into(
+                             conn,
+                             paste(schema,".",table,sep=""),
+                             select = paste(
+                               gsub("geom", sprintf("st_transform(geom, %s) as geom", srid), namesList),
+                               sep = "", collapse = ","
+                               ),
+                             into_schema = schema,
+                             into_table = out_table,
+                             eval = F
+                             )
+  
+      sql <- paste(sql,
+                   sprintf("alter table %s add column gid serial primary key",out_table),
+                   sep = "\n"
+                   )
+  
+      if(eval == FALSE)
+        {
+          return(sql)
+        } else {
+          dbSendQuery(conn, sql)
+        }
+  
+    }
+  
+#+end_src
+
+#+RESULTS: postgis_reproject
+
+*** test-postgis_reproject
+#+name:postgis_reproject
+#+begin_src R :session *R* :tangle no :exports none :eval no
+################################################################
+# name:postgis_reproject
+
+#+end_src
+*** man-postgis_reproject
+#+name:postgis_reproject
+#+begin_src R :session *R* :tangle no :exports none :eval no
+################################################################
+# name:postgis_reproject
+
+#+end_src
+
 ** readGDAL2
 *** test-readGDAL2
 #+name:readGDAL2
