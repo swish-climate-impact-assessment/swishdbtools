@@ -31,9 +31,9 @@ postgis_reproject <- function(conn, x, srid, out_table = NA, eval = F)
                            eval = F
                            )
 
-    sql <- paste(sql,
-                 sprintf("alter table %s add column gid serial primary key;",out_table),
-                 sep = ";\n"
+    sql <- paste(sql,";\n",
+                 sprintf("alter table %s.%s add column gid serial primary key;",schema, out_table),
+                 sep = ""
                  )
 
     if(eval == FALSE)
