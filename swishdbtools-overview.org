@@ -2553,8 +2553,8 @@ load2postgres <- function(inputfilepath,schema,tablename,pk=NULL,header=TRUE,pri
                              )
   
       sql <- paste(sql,
-                   sprintf("alter table %s add column gid serial primary key",out_table),
-                   sep = "\n"
+                   sprintf("alter table %s add column gid serial primary key;",out_table),
+                   sep = ";\n"
                    )
   
       if(eval == FALSE)
