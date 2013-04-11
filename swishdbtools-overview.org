@@ -2668,7 +2668,7 @@ LinuxOperatingSystem <- function()
 #+begin_src R :session *R* :tangle R/read_file.r :exports none :eval yes :reports none
   ################################################################
   # name:read_file
-  read_file(inputfilepath, header=TRUE, sheetname="Sheet1")
+  read_file <- function(inputfilepath, header=TRUE, sheetname="Sheet1")
   {
     if (!require(RODBC)) install.packages('RODBC'); require(RODBC) # for
                                           # getSqlTypeInfo

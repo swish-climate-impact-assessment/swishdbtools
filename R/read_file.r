@@ -1,7 +1,7 @@
 
 ################################################################
 # name:read_file
-read_file(inputfilepath, header=TRUE, sheetname="Sheet1")
+read_file <- function(inputfilepath, header=TRUE, sheetname="Sheet1")
 {
   if (!require(RODBC)) install.packages('RODBC'); require(RODBC) # for
                                         # getSqlTypeInfo
