@@ -6,7 +6,7 @@ read_file <- function(inputfilepath, header=TRUE, sheetname="Sheet1")
   if (!require(RODBC)) install.packages('RODBC'); require(RODBC) # for
                                         # getSqlTypeInfo
   if(!require(foreign)) install.packages('foreign'); require(foreign)
-
+  if(!require(XLConnect)) install.packages('XLConnect'); require(XLConnect)
   ext<-substr(inputfilepath,nchar(inputfilepath)-2,nchar(inputfilepath))
   #print(ext)
 
@@ -22,8 +22,8 @@ read_file <- function(inputfilepath, header=TRUE, sheetname="Sheet1")
     names(data)<-gsub("\\.","_",names(data))
     names(data)<-gsub("_+","_",names(data))
   } else if (ext=="xls") {
-    odbcf<-odbcConnectExcel(inputfilepath)
-    data<-sqlFetch(odbcf,sheetname,as.is=TRUE)
+    wb <- loadWorkbook(fname)
+    data <- readWorksheet(wb, sheet = "Sheet1")
   } else print("Unknown extension")
 
 }
