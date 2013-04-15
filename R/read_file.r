@@ -24,7 +24,7 @@ read_file <- function(inputfilepath, header=TRUE, sheetname="Sheet1", sanitise_n
   } else if (ext=="xls" || ext == "xlsx") {
     wb <- loadWorkbook(inputfilepath)
     data <- readWorksheet(wb, sheet = "Sheet1")
-  } eles if (ext == "shp") {
+  } else if (ext == "shp") {
     layer <- gsub(paste(".", ext, sep = ""), "", filename)
     datadir <- gsub(filename, "", inputfilepath)
     workdir <- getwd()
