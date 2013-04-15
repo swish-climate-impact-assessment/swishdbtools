@@ -1,6 +1,11 @@
 
 ################################################################
 # name:read_file
+if (!require(RODBC)) install.packages('RODBC'); require(RODBC) # for
+                                      # getSqlTypeInfo
+if(!require(foreign)) install.packages('foreign'); require(foreign)
+if(!require(XLConnect)) install.packages('XLConnect'); require(XLConnect)
+
 require(devtools)
 install_github("swishdbtools", "swish-climate-impact-assessment")
 filename <- file.path(Sys.getenv("TEMP"), "airquality.dta")

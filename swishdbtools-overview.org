@@ -7,6 +7,23 @@
 -----
 
 * Introduction
+** DESCRIPTION
+*** COMMENT DESCRIPTION-code
+#+name:DESCRIPTION
+#+begin_src R :session *R* :tangle DESCRIPTION :exports none :eval no :padline no
+Package: swishdbtools
+Type: Package
+Title: Database tools for use with the SWISH project
+Version: 1.1
+Date: 2012-12-13
+Author: ivanhanigan
+Maintainer: <ivan.hanigan@gmail.com>
+Depends: foreign, rgdal, plyr, RODBC, XLConnect
+Description: database tools
+License: GPL (>= 2)
+
+#+end_src
+
 ** run tests
 #+name:test_project
 #+begin_src R :session *R* :tangle test_project.r :exports none :eval no
@@ -2668,14 +2685,16 @@ LinuxOperatingSystem <- function()
 #+begin_src R :session *R* :tangle R/read_file.r :exports none :eval yes :reports none
   ################################################################
   # name:read_file
-  read_file <- function(inputfilepath, header=TRUE, sheetname="Sheet1")
+  
+  read_file <- function(inputfilepath, header=TRUE, sheetname="Sheet1", sanitise_names = TRUE)
   {
-    if (!require(RODBC)) install.packages('RODBC'); require(RODBC) # for
-                                          # getSqlTypeInfo
-    if(!require(foreign)) install.packages('foreign'); require(foreign)
-    if(!require(XLConnect)) install.packages('XLConnect'); require(XLConnect)
-    ext<-substr(inputfilepath,nchar(inputfilepath)-2,nchar(inputfilepath))
-    #print(ext)
+  
+    filename <- unlist(
+                       strsplit(inputfilepath,"/")
+                       )[length(unlist(strsplit(inputfilepath,"/")))]
+    filename_split <- strsplit(filename, "\\.")[[1]]
+    ext <- filename_split[length(filename_split)]
+    # print(ext)
   
     if (ext=="dbf")
     {
@@ -2686,13 +2705,25 @@ LinuxOperatingSystem <- function()
       #or from csv originally
       csvfilename<-inputfilepath
       data<-read.csv(csvfilename,stringsAsFactors=FALSE,header=header,strip.white=TRUE)
-      names(data)<-gsub("\\.","_",names(data))
-      names(data)<-gsub("_+","_",names(data))
-    } else if (ext=="xls") {
-      wb <- loadWorkbook(fname)
+    } else if (ext=="xls" || ext == "xlsx") {
+      wb <- loadWorkbook(inputfilepath)
       data <- readWorksheet(wb, sheet = "Sheet1")
+    } eles if (ext == "shp") {
+      layer <- gsub(paste(".", ext, sep = ""), "", filename)
+      datadir <- gsub(filename, "", inputfilepath)
+      workdir <- getwd()
+      setwd(datadir)
+      data <- readOGR(filename, layer)
+      setwd(workdir)
     } else print("Unknown extension")
   
+    if(sanitise_names)
+      {
+        names(data)<-gsub("\\.","_",names(data))
+        names(data)<-gsub("_+","_",names(data))
+      }
+  
+    return(data)
   }
   
 #+end_src
@@ -2704,6 +2735,11 @@ LinuxOperatingSystem <- function()
 #+begin_src R :session *R* :tangle tests/test-read_file.r :exports none :eval no
   ################################################################
   # name:read_file
+  if (!require(RODBC)) install.packages('RODBC'); require(RODBC) # for
+                                        # getSqlTypeInfo
+  if(!require(foreign)) install.packages('foreign'); require(foreign)
+  if(!require(XLConnect)) install.packages('XLConnect'); require(XLConnect)
+
   require(devtools)
   install_github("swishdbtools", "swish-climate-impact-assessment")
   filename <- file.path(Sys.getenv("TEMP"), "airquality.dta")
