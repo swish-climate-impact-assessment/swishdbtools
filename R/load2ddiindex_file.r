@@ -17,7 +17,7 @@
                                       substr(filedscr$PRODDATEDOCFILE,1,10),'%Y-%m-%d'
                                       ),"%d/%b/%Y")
         }
-    dbSendUpdate(ch,
+    dbSendUpdate(conn,
     # cat(
       paste('
       insert into FILEDSCR (',paste(names(filedscr), sep = '', collapse = ', '),')
