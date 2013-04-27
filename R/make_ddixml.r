@@ -365,6 +365,8 @@ xml=paste("
 paste("\n\nSTUDY TITLE:\n",titl,
 "\n\nFILE DESCRIPTION:\n",fileDscr$filetype[j],"\n",fileDscr$filedscr[j],"\n",fileDscr$notes[j],
 "\n\nSTUDY DESCRIPTION:\n",abstract,sep="",collapse="\n"),
+paste("\nLINK TO METADATA DOCUMENTS:
+<a href=\"http://swish-climate-impact-assessment.github.com/metadata/",fileDscrJ$idno,".html\">http://swish-climate-impact-assessment.github.com/metadata/",fileDscrJ$idno,".html</a>",sep=""),
 
 "
 ]]>
