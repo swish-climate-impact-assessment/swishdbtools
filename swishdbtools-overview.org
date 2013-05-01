@@ -3907,3 +3907,39 @@ FillCategoryTimeSeries<-function(tableIn, variableName, fillValue, variable1, ..
 # name:sqldf_lag
 
 #+end_src
+** swish_tempfile
+*** R-swish_tempfile
+#+name:swish_tempfile
+#+begin_src R :session *R* :tangle R/swish_tempfile.r :exports none :eval no
+  ################################################################
+  # name:swish_tempfile
+  swish_tempfile <- function(df = NA, eval = F, prefix = "foo", fext = ".dta")
+    {
+      tempdir <-  Sys.getenv("TEMP")
+      if(nchar(tempdir)==0) stop("Your tempdir is empty, please set it with Sys.setenv(TEMP = '/tmp') for eg.")
+      tempFileName <- tempfile(prefix, tmpdir = tempdir, fileext = fext)
+      if(eval == T)
+        {
+          write.dta(df, tempFileName)
+          return(tempFileName )
+        } else {
+          return(tempFileName )        
+        }
+    }
+  
+  
+#+end_src
+*** test-swish_tempfile
+#+name:swish_tempfile
+#+begin_src R :session *R* :tangle no :exports none :eval no
+################################################################
+# name:swish_tempfile
+
+#+end_src
+*** man-swish_tempfile
+#+name:swish_tempfile
+#+begin_src R :session *R* :tangle no :exports none :eval no
+################################################################
+# name:swish_tempfile
+
+#+end_src
