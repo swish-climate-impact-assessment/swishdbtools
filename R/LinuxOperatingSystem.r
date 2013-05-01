@@ -18,6 +18,7 @@ LinuxOperatingSystem <- function()
     # don't know, do more tests
     print('Non linux or windows os detected. Assume linux-alike.')
     os <- 'linux?'
+    OsLinux <- TRUE
   }
  
   return (OsLinux)

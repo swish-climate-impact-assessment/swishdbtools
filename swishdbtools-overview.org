@@ -14,8 +14,8 @@
 Package: swishdbtools
 Type: Package
 Title: Database tools for use with the SWISH project
-Version: 1.1
-Date: 2012-12-13
+Version: 1.2
+Date: 2013-05-01
 Author: ivanhanigan
 Maintainer: <ivan.hanigan@gmail.com>
 Depends: foreign, rgdal, plyr, RODBC, XLConnect
@@ -51,9 +51,9 @@ getPassword and connect2postgres~
 \tabular{ll}{
 Package: \tab swishdbtools\cr
 Type: \tab Package\cr
-Version: \tab 1.0\cr
-Date: \tab 2012-12-13\cr
-License: \tab What license is it under?\cr
+Version: \tab 1.1\cr
+Date: \tab 2012-05-01\cr
+License: \tab GPL2\cr
 }
 ~~ An overview of how to use the package, including the most important functions ~~
 }
@@ -620,6 +620,17 @@ function (hostip = NA, db = NA, user = NA, p = NA, os = "linux",
     ch <- connect2postgres2("ewedb")
     dbGetQuery(ch, 'select * from dbsize')
 #+end_src
+*** COMMENT newnodes-map-code
+#+name:newnodes-map
+#+begin_src R :session *R* :tangle no :exports none :eval no
+  ################################################################
+  # name:newnodes-map
+  install.packages("mvbutils")
+  require(mvbutils)
+  require(swishdbtools)
+  foodweb( find.funs("package:swishdbtools"), prune="connect2postgres2") 
+#+end_src
+
 *** R-connect2postgres2
 #+name:connect2postgres2
 #+begin_src R :session *R* :tangle R/connect2postgres2.r :exports none :eval no
@@ -1070,29 +1081,30 @@ function (remote = F)
 *** R-LinuxOperatingSystem
 #+name:LinuxOperatingSystem
 #+begin_src R :session *R* :tangle R/LinuxOperatingSystem.r :exports none :eval no
-################################################################
-# name:LinuxOperatingSystem
-LinuxOperatingSystem <- function()
-{
-  if(length(grep('linux',sessionInfo()[[1]]$os)) == 1)
+  ################################################################
+  # name:LinuxOperatingSystem
+  LinuxOperatingSystem <- function()
   {
-    #print('Linux')
-    os <- 'linux' 
-    OsLinux <- TRUE
-  }else if (length(grep('ming',sessionInfo()[[1]]$os)) == 1)
-  {
-    #print('Windows')
-    os <- 'windows'
-    OsLinux <- FALSE
-  }else
-  {
-    # don't know, do more tests
-    print('Non linux or windows os detected. Assume linux-alike.')
-    os <- 'linux?'
+    if(length(grep('linux',sessionInfo()[[1]]$os)) == 1)
+    {
+      #print('Linux')
+      os <- 'linux' 
+      OsLinux <- TRUE
+    }else if (length(grep('ming',sessionInfo()[[1]]$os)) == 1)
+    {
+      #print('Windows')
+      os <- 'windows'
+      OsLinux <- FALSE
+    }else
+    {
+      # don't know, do more tests
+      print('Non linux or windows os detected. Assume linux-alike.')
+      os <- 'linux?'
+      OsLinux <- TRUE
+    }
+   
+    return (OsLinux)
   }
- 
-  return (OsLinux)
-}
 #+end_src
 *** man-LinuxOperatingSystem
 #+name:LinuxOperatingSystem
