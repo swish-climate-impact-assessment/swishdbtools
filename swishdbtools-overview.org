@@ -602,35 +602,6 @@ function (hostip = NA, db = NA, user = NA, p = NA, os = "linux",
 #+end_src
 
 ** connect2postgres2
-*** test-connect2postgres2
-#+name:connect2postgres2
-# tests/test-connect2postgres2.r
-#+begin_src R :session *R* :tangle no :exports none :eval no
-  ################################################################
-  # name:connect2postgres2
-    source("R/LinuxOperatingSystem.r")
-    source("R/get_pgpass.r")
-    source("R/connect2postgres.r")
-    source("R/connect2postgres2.r")
-  
-  #  debug(connect2postgres2)
-    ch <- connect2postgres2("ewedb", "115.146.84.135", "ivan_hanigan")
-    dbGetQuery(ch, 'select * from dbsize')
-  debug(connect2postgres2)
-    ch <- connect2postgres2("ewedb")
-    dbGetQuery(ch, 'select * from dbsize')
-#+end_src
-*** COMMENT newnodes-map-code
-#+name:newnodes-map
-#+begin_src R :session *R* :tangle no :exports none :eval no
-  ################################################################
-  # name:newnodes-map
-  install.packages("mvbutils")
-  require(mvbutils)
-  require(swishdbtools)
-  foodweb( find.funs("package:swishdbtools"), prune="connect2postgres2") 
-#+end_src
-
 *** R-connect2postgres2
 #+name:connect2postgres2
 #+begin_src R :session *R* :tangle R/connect2postgres2.r :exports none :eval no
@@ -666,6 +637,35 @@ function (hostip = NA, db = NA, user = NA, p = NA, os = "linux",
   }
   
 #+end_src
+*** test-connect2postgres2
+#+name:connect2postgres2
+# tests/test-connect2postgres2.r
+#+begin_src R :session *R* :tangle tests/test-connect2postgres2.r :exports none :eval no
+  ################################################################
+  # name:connect2postgres2
+    source("R/LinuxOperatingSystem.r")
+    source("R/get_pgpass.r")
+    source("R/connect2postgres.r")
+    source("R/connect2postgres2.r")
+  
+  #  debug(connect2postgres2)
+    ch <- connect2postgres2("ewedb", "115.146.84.135", "ivan_hanigan")
+    dbGetQuery(ch, 'select * from dbsize')
+    debug(connect2postgres2)
+    ch <- connect2postgres2("ewedb")
+    dbGetQuery(ch, 'select * from dbsize')
+#+end_src
+*** COMMENT newnodes-map-code
+#+name:newnodes-map
+#+begin_src R :session *R* :tangle no :exports none :eval no
+  ################################################################
+  # name:newnodes-map
+  install.packages("mvbutils")
+  require(mvbutils)
+  require(swishdbtools)
+  foodweb( find.funs("package:swishdbtools"), prune="connect2postgres2") 
+#+end_src
+
 *** man-connect2postgres2
 #+name:connect2postgres2
 #+begin_src R :session *R* :tangle no :exports none :eval no
