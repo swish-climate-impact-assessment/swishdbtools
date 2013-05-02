@@ -3968,10 +3968,20 @@ FillCategoryTimeSeries<-function(tableIn, variableName, fillValue, variable1, ..
 #+end_src
 *** test-swish_temptable
 #+name:swish_temptable
-#+begin_src R :session *R* :tangle no :exports none :eval no
+#+begin_src R :session *R* :tangle tests/test-swish_temptable.r :exports none :eval no
 ################################################################
 # name:swish_temptable
-
+require(swishdbtools)
+ch <- connect2postgres2("ewedb")
+df <- as.data.frame(rep("hello_ewedb", 10))
+names(df) <- "hello_ewedb"
+tempTableName <- swish_temptable()
+dbWriteTable(ch, tempTableName, df, row.names = F)
+tested <- sql_subset(ch, tempTableName, eval = T)
+dbSendQuery(ch, 
+  sprintf("drop table %s", tempTableName)
+  )
+tested
 #+end_src
 *** man-swish_temptable
 #+name:swish_temptable
