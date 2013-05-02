@@ -645,15 +645,17 @@ function (hostip = NA, db = NA, user = NA, p = NA, os = "linux",
   # name:connect2postgres2
     source("R/LinuxOperatingSystem.r")
     source("R/get_pgpass.r")
+    source("R/get_passwordTable.r")
     source("R/connect2postgres.r")
     source("R/connect2postgres2.r")
   
   #  debug(connect2postgres2)
-    ch <- connect2postgres2("ewedb", "115.146.84.135", "ivan_hanigan")
-    dbGetQuery(ch, 'select * from dbsize')
-    debug(connect2postgres2)
+  #  ch <- connect2postgres2("ewedb", "115.146.84.135", "ivan_hanigan")
+  #  dbGetQuery(ch, 'select * from dbsize')
+  #  debug(connect2postgres2)
     ch <- connect2postgres2("ewedb")
     dbGetQuery(ch, 'select * from dbsize')
+  
 #+end_src
 *** COMMENT newnodes-map-code
 #+name:newnodes-map
@@ -812,28 +814,35 @@ function (hostip = NA, db = NA, user = NA, p = NA, os = "linux",
 *** R-get_passwordTable
 #+name:get_passwordTable
 #+begin_src R :session *R* :tangle R/get_passwordTable.r :exports none :eval no
-################################################################
-# name:get_passwordTable
-    get_passwordTable <- function(fileName)
-    {
-      linux <- LinuxOperatingSystem()
-      if(linux)
+  ################################################################
+  # name:get_passwordTable
+      get_passwordTable <- function(fileName)
       {
-        fileName <- "~/.pgpass"
-      } else
-      {
-        directory <- Sys.getenv("APPDATA")
-        fileName <- file.path(directory, "postgresql", "pgpass.conf")
+        linux <- LinuxOperatingSystem()
+        if(linux)
+        {
+          fileName <- "~/.pgpass"
+        } else
+        {
+          directory <- Sys.getenv("APPDATA")
+          fileName <- file.path(directory, "postgresql", "pgpass.conf")
+        }
+    
+        exists <- file.exists(fileName)
+        if(!exists & linux)
+        {
+          sink('~/.pgpass')
+          cat('hostname:port:database:username:password\n')
+          sink()
+        }
+    
+        if (exists)
+        {
+          passwordTable <- read.table(fileName, sep = ":", stringsAsFactors=FALSE)
+          return(passwordTable)
+        } 
+    
       }
-  
-      exists <- file.exists(fileName)
-      if (exists)
-      {
-        passwordTable <- read.table(fileName, sep = ":", stringsAsFactors=FALSE)
-        return(passwordTable)
-      }
-  
-    }
 #+end_src
 *** man-get_passwordTable
 #+name:get_passwordTable

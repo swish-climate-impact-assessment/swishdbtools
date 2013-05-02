@@ -8,8 +8,8 @@
   source("R/connect2postgres2.r")
 
 #  debug(connect2postgres2)
-  ch <- connect2postgres2("ewedb", "115.146.84.135", "ivan_hanigan")
-  dbGetQuery(ch, 'select * from dbsize')
-  debug(connect2postgres2)
+#  ch <- connect2postgres2("ewedb", "115.146.84.135", "ivan_hanigan")
+#  dbGetQuery(ch, 'select * from dbsize')
+#  debug(connect2postgres2)
   ch <- connect2postgres2("ewedb")
   dbGetQuery(ch, 'select * from dbsize')

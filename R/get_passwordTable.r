@@ -14,10 +14,17 @@
       }
   
       exists <- file.exists(fileName)
+      if(!exists & linux)
+      {
+        sink('~/.pgpass')
+        cat('hostname:port:database:username:password\n')
+        sink()
+      }
+  
       if (exists)
       {
         passwordTable <- read.table(fileName, sep = ":", stringsAsFactors=FALSE)
         return(passwordTable)
-      }
+      } 
   
     }
