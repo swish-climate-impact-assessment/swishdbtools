@@ -3,6 +3,7 @@
 # name:connect2postgres2
   source("R/LinuxOperatingSystem.r")
   source("R/get_pgpass.r")
+  source("R/get_passwordTable.r")
   source("R/connect2postgres.r")
   source("R/connect2postgres2.r")
 
