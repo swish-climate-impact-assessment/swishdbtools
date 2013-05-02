@@ -3943,3 +3943,31 @@ FillCategoryTimeSeries<-function(tableIn, variableName, fillValue, variable1, ..
 # name:swish_tempfile
 
 #+end_src
+** swish_temptable
+*** R-swish_temptable
+#+name:swish_temptable
+#+begin_src R :session *R* :tangle R/swish_temptable.r :exports none :eval no
+  ################################################################
+  # name:swish_temptable
+  swish_temptable <- function(prefix = "foo")
+    {
+      temptableName <- tempfile(prefix, tmpdir = "", fileext = "")
+      temp_table_name <- gsub("/", "", gsub("\\\\", "", temptableName))
+      return(temp_table_name )        
+    }
+  
+#+end_src
+*** test-swish_temptable
+#+name:swish_temptable
+#+begin_src R :session *R* :tangle no :exports none :eval no
+################################################################
+# name:swish_temptable
+
+#+end_src
+*** man-swish_temptable
+#+name:swish_temptable
+#+begin_src R :session *R* :tangle no :exports none :eval no
+################################################################
+# name:swish_temptable
+
+#+end_src
