@@ -180,7 +180,7 @@ paste("<var ID='V",i,"' name ='",dataDscr[i,'LABL'],"'>
 </var>",sep=""))
 }
 }
-cat(variablesList)
+#cat(variablesList)
 }
 
 # get keywords
@@ -213,7 +213,7 @@ paste("<keyword>
 )
 }
 }
-cat(keywordslist)
+#cat(keywordslist)
 
 #################################################################################
 # save to an xml
@@ -234,7 +234,7 @@ xml=paste("
 <titlStmt>
 <titl>
 <![CDATA[  
-",paste(toupper(abbreviation),filename,sep='_'),"
+",paste(toupper(abbreviation),fileDscrJ$filename,sep='_'),"
 ]]> 
 </titl>
 <IDNo>
@@ -364,10 +364,13 @@ xml=paste("
 
 paste("\n\nSTUDY TITLE:\n",titl,
 "\n\nFILE DESCRIPTION:\n",fileDscr$filetype[j],"\n",fileDscr$filedscr[j],"\n",fileDscr$notes[j],
-"\n\nSTUDY DESCRIPTION:\n",abstract,sep="",collapse="\n"),
-paste("\nLINK TO METADATA DOCUMENTS:
-<a href=\"http://swish-climate-impact-assessment.github.com/metadata/",fileDscrJ$idno,".html\">http://swish-climate-impact-assessment.github.com/metadata/",fileDscrJ$idno,".html</a>",sep=""),
+"\n\nSTUDY DESCRIPTION:\n",abstract
+  ,
+"\n\nLINK TO METADATA DOCUMENTS:\n
+ <a href=\"http://swish-climate-impact-assessment.github.com/metadata/",fileDscrJ$idno,".html\">http://swish-climate-impact-assessment.github.com/metadata/",fileDscrJ$idno,".html</a>"
+  ,sep="",collapse="\n")
 
+  ,
 "
 ]]>
 </abstract>
