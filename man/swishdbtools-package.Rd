@@ -13,8 +13,8 @@ getPassword and connect2postgres~
 \tabular{ll}{
 Package: \tab swishdbtools\cr
 Type: \tab Package\cr
-Version: \tab 1.3\cr
-Date: \tab 2013-05-08\cr
+Version: \tab 1.1\cr
+Date: \tab 2012-05-01\cr
 License: \tab GPL2\cr
 }
 ~~ An overview of how to use the package, including the most important functions ~~
