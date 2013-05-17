@@ -803,6 +803,36 @@ function (hostip = NA, db = NA, user = NA, p = NA, os = "linux",
 
 #+end_src
 
+** get_file_extension
+*** R-get_file_extension
+#+name:get_file_extension
+#+begin_src R :session *R* :tangle R/get_file_extension.r :exports none :eval no
+  ################################################################
+  # name:get_file_extension
+  get_file_extension <- function(inputfilepath)
+  {
+      filename <- unlist(strsplit(inputfilepath, "/"))[length(unlist(strsplit(inputfilepath, 
+          "/")))]
+      filename_split <- strsplit(filename, "\\.")[[1]]
+      ext <- filename_split[length(filename_split)]
+      return(ext)
+  }
+#+end_src
+*** test-get_file_extension
+#+name:get_file_extension
+#+begin_src R :session *R* :tangle no :exports none :eval no
+################################################################
+# name:get_file_extension
+
+#+end_src
+*** man-get_file_extension
+#+name:get_file_extension
+#+begin_src R :session *R* :tangle no :exports none :eval no
+################################################################
+# name:get_file_extension
+
+#+end_src
+
 ** get_passwordTable
 *** test-get_passwordTable
 #+name:get_passwordTable
@@ -1664,6 +1694,7 @@ function (remote = F)
       }
   
       ch <- connect2oracle('115.146.93.108', db="DDIINDEXDB", p = pwd)
+      
   stdy  <- "AWAP_GRIDS"
   stdydscr <- dbGetQuery(ch,
                      sprintf("select * from stdydscr where idno = '%s'", stdy)

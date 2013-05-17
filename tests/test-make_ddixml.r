@@ -9,6 +9,7 @@ require(swishdbtools)
     }
 
     ch <- connect2oracle('115.146.93.108', db="DDIINDEXDB", p = pwd)
+    
 stdy  <- "AWAP_GRIDS"
 stdydscr <- dbGetQuery(ch,
                    sprintf("select * from stdydscr where idno = '%s'", stdy)
