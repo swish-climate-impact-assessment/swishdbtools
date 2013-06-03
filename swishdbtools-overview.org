@@ -18,7 +18,7 @@ Version: 1.3
 Date: 2013-05-08
 Author: ivanhanigan
 Maintainer: <ivan.hanigan@gmail.com>
-Depends: foreign, rgdal, plyr, RODBC, XLConnect
+Depends: foreign, rgdal, plyr, RODBC, XLConnect, RJDBC
 Description: database tools
 License: GPL (>= 2)
 
@@ -328,9 +328,9 @@ Maintainer: Who to complain to <ivan.hanigan@gmail.com>
 # "R CMD javareconf" as root
 connect2oracle <- function(hostip=NA, db=NA, p=NA,
                            driverlocation='/lib/ojdbc6.jar'){
-  if(!require(RJDBC)) install.packages('RJDBC'); require(RJDBC)
+  require(RJDBC)
   drv <- JDBC("oracle.jdbc.driver.OracleDriver",
-              '/lib/ojdbc6.jar')
+              driverlocation)
   
   if(is.na(hostip)){
     hostip=readline('enter hostip: ')

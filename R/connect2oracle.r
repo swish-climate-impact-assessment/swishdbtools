@@ -9,9 +9,9 @@
 # "R CMD javareconf" as root
 connect2oracle <- function(hostip=NA, db=NA, p=NA,
                            driverlocation='/lib/ojdbc6.jar'){
-  if(!require(RJDBC)) install.packages('RJDBC'); require(RJDBC)
+  require(RJDBC)
   drv <- JDBC("oracle.jdbc.driver.OracleDriver",
-              '/lib/ojdbc6.jar')
+              driverlocation)
   
   if(is.na(hostip)){
     hostip=readline('enter hostip: ')
