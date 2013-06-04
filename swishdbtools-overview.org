@@ -14,11 +14,11 @@
 Package: swishdbtools
 Type: Package
 Title: Database tools for use with the SWISH project
-Version: 1.3
-Date: 2013-05-08
+Version: 1.4
+Date: 2013-06-06
 Author: ivanhanigan
 Maintainer: <ivan.hanigan@gmail.com>
-Depends: foreign, rgdal, plyr, RODBC, XLConnect, RJDBC
+Depends: foreign, rgdal, plyr, RODBC
 Description: database tools
 License: GPL (>= 2)
 
@@ -51,8 +51,8 @@ getPassword and connect2postgres~
 \tabular{ll}{
 Package: \tab swishdbtools\cr
 Type: \tab Package\cr
-Version: \tab 1.1\cr
-Date: \tab 2012-05-01\cr
+Version: \tab 1.4\cr
+Date: \tab 2012-06-06\cr
 License: \tab GPL2\cr
 }
 ~~ An overview of how to use the package, including the most important functions ~~
@@ -306,7 +306,7 @@ Maintainer: Who to complain to <ivan.hanigan@gmail.com>
   
   
 #+end_src
-** connect2oracle
+** COMMENT DEPRECATED connect2oracle
 *** test-connect2oracle
 #+name:connect2oracle
 # tests/test-connect2oracle.r
@@ -317,7 +317,7 @@ Maintainer: Who to complain to <ivan.hanigan@gmail.com>
 #+end_src
 *** R-connect2oracle
 #+name:connect2oracle
-#+begin_src R :session *R* :tangle R/connect2oracle.r :exports none :eval no
+#+begin_src R :session *R* :tangle no :exports none :eval no
 ################################################################
 # name:connect2oracle
 # make sure you have JDK, if not install the SUN version
@@ -352,7 +352,7 @@ connect2oracle <- function(hostip=NA, db=NA, p=NA,
 #+end_src
 *** man-connect2oracle
 #+name:connect2oracle
-#+begin_src R :session *R* :tangle man/connect2oracle.Rd :exports none :eval no
+#+begin_src R :session *R* :tangle no :exports none :eval no
 \name{connect2oracle}
 \alias{connect2oracle}
 %- Also NEED an '\alias' for EACH other topic documented here.
@@ -2791,8 +2791,9 @@ function (remote = F)
       csvfilename<-inputfilepath
       data<-read.csv(csvfilename,stringsAsFactors=FALSE,header=header,strip.white=TRUE)
     } else if (ext=="xls" || ext == "xlsx") {
-      wb <- loadWorkbook(inputfilepath)
-      data <- readWorksheet(wb, sheet = "Sheet1")
+      stop("XLS file format no longer supported by swishdbtools > 1.4")
+      # wb <- loadWorkbook(inputfilepath)
+      # data <- readWorksheet(wb, sheet = "Sheet1")
     } else if (ext == "shp") {
       layer <- gsub(paste(".", ext, sep = ""), "", filename)
       datadir <- gsub(filename, "", inputfilepath)

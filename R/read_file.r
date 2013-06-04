@@ -22,8 +22,9 @@ read_file <- function(inputfilepath, header=TRUE, sheetname="Sheet1", sanitise_n
     csvfilename<-inputfilepath
     data<-read.csv(csvfilename,stringsAsFactors=FALSE,header=header,strip.white=TRUE)
   } else if (ext=="xls" || ext == "xlsx") {
-    wb <- loadWorkbook(inputfilepath)
-    data <- readWorksheet(wb, sheet = "Sheet1")
+    stop("XLS file format no longer supported by swishdbtools > 1.4")
+    # wb <- loadWorkbook(inputfilepath)
+    # data <- readWorksheet(wb, sheet = "Sheet1")
   } else if (ext == "shp") {
     layer <- gsub(paste(".", ext, sep = ""), "", filename)
     datadir <- gsub(filename, "", inputfilepath)
