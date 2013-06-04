@@ -1,7 +1,7 @@
 
 sql_subset_into <- function(conn, x, ..., into_schema = "public", into_table, eval = FALSE, drop = TRUE)
 {
-  sql <- sql_subset(ch, x=x, ..., eval=F)
+  sql <- sql_subset(conn, x=x, ..., eval=F)
   sql <- gsub('from', paste("into ", into_schema, ".", into_table, "\nfrom ", sep = ""), sql)
   if(eval)
   {
