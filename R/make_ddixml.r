@@ -499,13 +499,14 @@ paste("\n\nSTUDY TITLE:\n",titl,
 #    ",paste(t(othermatlist),collapse="\n"),"
 detach(stdyDscr)
 detach(fileDscrJ)
+return(xml)
 #str(xml)
 #cat(xml)
-if(writeXML)
-{
-outdir <- getwd()
-write.table(xml,sprintf("%s/%s%s%s.xml",outdir,tolower(abbreviation),"_",fileDscrJ$fileid),row.names=F,col.names=F,quote=F)
-} else {
-return(xml)
-}  
+#if(writeXML)
+#{
+#outdir <- getwd()
+#write.table(xml,sprintf("%s/%s%s%s.xml",outdir,tolower(abbreviation),"_",fileDscrJ$fileid),row.names=F,col.names=F,quote=F)
+#} else {
+#return(xml)
+#}  
 }

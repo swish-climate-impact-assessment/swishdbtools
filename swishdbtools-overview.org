@@ -1789,7 +1789,7 @@ function (remote = F)
 #+end_src
 *** R-make_ddixml
 #+name:make_ddixml
-#+begin_src R :session *shell* :tangle R/make_ddixml.r :exports none :eval no
+#+begin_src R :session *shell* :tangle R/make_ddixml.r :exports none :eval yes
   ################################################################
   # name:make_ddixml
   make_ddixml <- function(s,f,d, writeXML = F){
@@ -2290,15 +2290,16 @@ function (remote = F)
   #    ",paste(t(othermatlist),collapse="\n"),"
   detach(stdyDscr)
   detach(fileDscrJ)
+  return(xml)
   #str(xml)
   #cat(xml)
-  if(writeXML)
-  {
-  outdir <- getwd()
-  write.table(xml,sprintf("%s/%s%s%s.xml",outdir,tolower(abbreviation),"_",fileDscrJ$fileid),row.names=F,col.names=F,quote=F)
-  } else {
-  return(xml)
-  }  
+  #if(writeXML)
+  #{
+  #outdir <- getwd()
+  #write.table(xml,sprintf("%s/%s%s%s.xml",outdir,tolower(abbreviation),"_",fileDscrJ$fileid),row.names=F,col.names=F,quote=F)
+  #} else {
+  #return(xml)
+  #}  
   }
   
 #+end_src
