@@ -443,7 +443,9 @@ paste("\n\nSTUDY TITLE:\n",titl,
 </confDec>
 <specPerm>
 <![CDATA[
-",paste("STUDY PERMISSIONS:\n",specperm,"\nFILE PERMISSIONS:\n",fileDscrJ$specpermfile,sep=""),"
+",
+  paste("STUDY PERMISSIONS:\n",specperm,"\nFILE PERMISSIONS:\n",fileDscrJ$specpermfile,sep="")
+  ,"
 ]]>
 </specPerm>
 <restrctn></restrctn>
@@ -493,11 +495,12 @@ paste("\n\nSTUDY TITLE:\n",titl,
 </dataDscr>
 </codeBook>
 ",sep="")
+
 #    ",paste(t(othermatlist),collapse="\n"),"
 detach(stdyDscr)
 detach(fileDscrJ)
-
-#  cat(xml)
+#str(xml)
+#cat(xml)
 if(writeXML)
 {
 outdir <- getwd()
