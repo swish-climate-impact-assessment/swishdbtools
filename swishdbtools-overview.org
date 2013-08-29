@@ -1787,7 +1787,7 @@ function (remote = F)
     }
   
 #+end_src
-*** R-make_ddixml
+*** TODO R-make_ddixml, this is a horrible hack.  rewrite with XML package
 #+name:make_ddixml
 #+begin_src R :session *shell* :tangle R/make_ddixml.r :exports none :eval yes
   ################################################################
@@ -1800,6 +1800,8 @@ function (remote = F)
   print(abbreviation) 
   # get study data
   stdyDscr=s
+  # rename due to conflict
+  stdyDscr$versionstmt  <- stdyDscr$version
   head(t(stdyDscr))
   tail(t(stdyDscr))
   
@@ -2124,7 +2126,7 @@ function (remote = F)
   <verStmt>
   <version>
   <![CDATA[  
-  ",version,"
+  ",versionstmt,"
   ]]>  
   </version>
   <notes></notes>

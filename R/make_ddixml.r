@@ -9,6 +9,8 @@ abbreviation=toupper(f$IDNO)
 print(abbreviation) 
 # get study data
 stdyDscr=s
+# rename due to conflict
+stdyDscr$versionstmt  <- stdyDscr$version
 head(t(stdyDscr))
 tail(t(stdyDscr))
 
@@ -333,7 +335,7 @@ xml=paste("
 <verStmt>
 <version>
 <![CDATA[  
-",version,"
+",versionstmt,"
 ]]>  
 </version>
 <notes></notes>
