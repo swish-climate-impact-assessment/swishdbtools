@@ -10,35 +10,10 @@ print(abbreviation)
 # get study data
 stdyDscr=s
 # rename due to conflict
-stdyDscr$versionstmt  <- stdyDscr$version
+stdyDscr$VERSIONSTMT  <- stdyDscr$VERSION
 head(t(stdyDscr))
 tail(t(stdyDscr))
 
-# get othrstdymat
-# othrstdymat <- sqlQuery(ch,
-# sprintf("
-# select t1.titl, t2.*
-# from stdyDscr t1
-# join othrstdymat t2
-# on t1.idno=t2.idno
-# where t1.idno='%s'
-# ",abbreviation)
-# ,stringsAsFactor=F)
-
-# if(nrow(othrstdymat)>0){
-# stdyDscr$ABSTRACT <- paste(stdyDscr$ABSTRACT,
-# '\n\nRELATED MATERIAL:\n',
-# paste(othrstdymat$RELPUBL[!is.na(othrstdymat$RELPUBL)],collapse='\n ',sep=''),
-# '\n\nRELATED NCEPH STUDIES:\n',
-# paste(othrstdymat$RELSTDYID[!is.na(othrstdymat$RELSTDYID)],collapse='\n ',sep='')
-# ,sep='')
-# }
-# cat(stdyDscr$ABSTRACT)
-
-# TASK if files then 'http://alliance.anu.edu.au/access/content/group/bf77d6fc-d1e1-401c-806a-25fbe06a82d0/ddiindex-nceph/',tolower(abbreviation),'_',fileid,'.html'
-# CUT from xml
-#paste("\nMETADATA DOCUMENTS:
-#http://alliance.anu.edu.au/access/content/group/bf77d6fc-d1e1-401c-806a-25fbe06a82d0/ddiindex-nceph/",fileDscrJ$idno,'_',fileDscrJ$fileid,'.html (and xml)',sep=''),
 
 # get file data
 fileDscr=f
