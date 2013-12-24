@@ -68,15 +68,14 @@ ivanhanigan
 %% ~~objects to See Also as \code{\link{help}}, ~~~
 }
 \examples{
- \dontrun{ 
-## Not run:
+\dontrun{
 ch <- connect2postgres('115.146.84.135', db='ewedb',
                        user='gislibrary', p='gislibrary')
 sql <- sql_subset(conn=ch, x='spatial_ref_sys',
                   subset = "srid = 4283", select='srid, srtext',
                   limit = 2, eval = T)
   
-  }
+}  
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.

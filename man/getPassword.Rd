@@ -43,7 +43,7 @@ ivanhanigan
 %% ~~objects to See Also as \code{\link{help}}, ~~~
 }
 \examples{
- \dontrun{
+\dontrun{
 function (remote = F) 
 {
     if (remote == F) {
@@ -62,7 +62,7 @@ function (remote = F)
         return(pass)
     }
   }
-  }
+}
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.

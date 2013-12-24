@@ -7,7 +7,7 @@
 {\tt make\_ddixml} Package Vignette
 \normalsize
 \end{center}
-The following figure illustrates a sequence of low-pass filters, applied to a series of electrocardiographic recording.
+The following figure illustrates a sequence of numbers.
 <<keep.source=TRUE>>=
 library('swishdbtools')
 x <- rnorm(100,1,2)

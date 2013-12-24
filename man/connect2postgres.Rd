@@ -59,7 +59,6 @@ ivanhanigan
 }
 \examples{
 \dontrun{
-
 function (hostip = NA, db = NA, user = NA, p = NA, os = "linux", 
     pgutils = c("/home/ivan/tools/jdbc", "c:/pgutils")) 
 {

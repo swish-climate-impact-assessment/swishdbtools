@@ -72,7 +72,7 @@ Maintainer: Who to complain to <ivan.hanigan@gmail.com>
 ~~ \code{\link[<pkg>:<pkg>-package]{<pkg>}} ~~
 }
 \examples{
-~~ simple examples of the most important functions ~~
+
 }
 
 #+end_src
@@ -544,11 +544,7 @@ ivanhanigan
 %% ~~objects to See Also as \code{\link{help}}, ~~~
 }
 \examples{
-##---- Should be DIRECTLY executable !! ----
-##-- ==>  Define data, use random,
-##--	or do  help(data=index)  for the standard data sets.
-
-## The function is currently defined as
+\dontrun{
 function (hostip = NA, db = NA, user = NA, p = NA, os = "linux", 
     pgutils = c("/home/ivan/tools/jdbc", "c:/pgutils")) 
 {
@@ -592,6 +588,7 @@ function (hostip = NA, db = NA, user = NA, p = NA, os = "linux",
     }
     rm(pwd)
     return(con)
+  }
   }
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
@@ -1123,11 +1120,7 @@ ivanhanigan
 %% ~~objects to See Also as \code{\link{help}}, ~~~
 }
 \examples{
-##---- Should be DIRECTLY executable !! ----
-##-- ==>  Define data, use random,
-##--	or do  help(data=index)  for the standard data sets.
-
-## The function is currently defined as
+\dontrun{
 function (remote = F) 
 {
     if (remote == F) {
@@ -1146,6 +1139,7 @@ function (remote = F)
         return(pass)
     }
   }
+}
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
@@ -3532,13 +3526,14 @@ ivanhanigan
 %% ~~objects to See Also as \code{\link{help}}, ~~~
 }
 \examples{
+\dontrun{
 ch <- connect2postgres('115.146.84.135', db='ewedb',
                        user='gislibrary', p='gislibrary')
 sql <- sql_subset(conn=ch, x='spatial_ref_sys',
                   subset = "srid = 4283", select='srid, srtext',
                   limit = 2, eval = T)
   
-  
+}  
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
@@ -4123,4 +4118,25 @@ tested
 ################################################################
 # name:swish_temptable
 
+#+end_src
+* vignettes
+*** COMMENT make_ddixml-code
+#+name:make_ddixml
+#+begin_src tex :tangle inst/doc/make_ddixml.Rnw :eval no :padline no
+\documentclass{article}
+%\VignetteIndexEntry{make_ddixml}
+\begin{document}
+\SweaveOpts{concordance=TRUE}
+\begin{center}
+\Large
+{\tt make\_ddixml} Package Vignette
+\normalsize
+\end{center}
+The following figure illustrates a sequence of numbers.
+<<keep.source=TRUE>>=
+library('swishdbtools')
+x <- rnorm(100,1,2)
+x
+@
+\end{document}
 #+end_src
