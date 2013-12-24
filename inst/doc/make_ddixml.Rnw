@@ -1,0 +1,16 @@
+\documentclass{article}
+%\VignetteIndexEntry{make_ddixml}
+\begin{document}
+\SweaveOpts{concordance=TRUE}
+\begin{center}
+\Large
+{\tt make\_ddixml} Package Vignette
+\normalsize
+\end{center}
+The following figure illustrates a sequence of low-pass filters, applied to a series of electrocardiographic recording.
+<<keep.source=TRUE>>=
+library('swishdbtools')
+x <- rnorm(100,1,2)
+x
+@
+\end{document}

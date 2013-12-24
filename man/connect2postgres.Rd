@@ -58,11 +58,8 @@ ivanhanigan
 %% ~~objects to See Also as \code{\link{help}}, ~~~
 }
 \examples{
-##---- Should be DIRECTLY executable !! ----
-##-- ==>  Define data, use random,
-##--    or do  help(data=index)  for the standard data sets.
+\dontrun{
 
-## The function is currently defined as
 function (hostip = NA, db = NA, user = NA, p = NA, os = "linux", 
     pgutils = c("/home/ivan/tools/jdbc", "c:/pgutils")) 
 {
@@ -106,6 +103,7 @@ function (hostip = NA, db = NA, user = NA, p = NA, os = "linux",
     }
     rm(pwd)
     return(con)
+  }
   }
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the

@@ -34,5 +34,5 @@ Maintainer: Who to complain to <ivan.hanigan@gmail.com>
 ~~ \code{\link[<pkg>:<pkg>-package]{<pkg>}} ~~
 }
 \examples{
-~~ simple examples of the most important functions ~~
+
 }
