@@ -3827,7 +3827,7 @@ sql <- sql_subset(conn=ch, x='spatial_ref_sys',
 # name:sql_transform
 #NB prefer int and double (float8) rather than bigint and numeric
 #+end_src
-** sql_tsfill
+** COMMENT DEPRECATED, MOVED TO RTAMET sql_tsfill
 *** test-sql_tsfill
 #+name:sql_tsfill
 #+begin_src R :session *R* :tangle tests/test-sql_tsfill.r :exports none :eval no
