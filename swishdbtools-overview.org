@@ -14,11 +14,11 @@
 Package: swishdbtools
 Type: Package
 Title: Database tools for use with the SWISH project
-Version: 1.4
-Date: 2013-06-06
+Version: 1.4.1
+Date: 2017-11-22
 Author: ivanhanigan
 Maintainer: <ivan.hanigan@gmail.com>
-Depends: foreign, rgdal, plyr, RODBC
+Depends: foreign, rgdal, plyr
 Description: database tools
 License: GPL (>= 2)
 
@@ -51,8 +51,8 @@ getPassword and connect2postgres~
 \tabular{ll}{
 Package: \tab swishdbtools\cr
 Type: \tab Package\cr
-Version: \tab 1.4\cr
-Date: \tab 2012-06-06\cr
+Version: \tab 1.4.1\cr
+Date: \tab 2017-11-22\cr
 License: \tab GPL2\cr
 }
 ~~ An overview of how to use the package, including the most important functions ~~
