@@ -250,7 +250,32 @@ Maintainer: Who to complain to <ivan.hanigan@gmail.com>
   if (!require(R2HTML)) install.packages('R2HTML')
   require(R2HTML)
     
-    elements = c('TITL','IDNO','PRODUCER','PRODDATEDOC','BIBLCITDOC','AUTHENTY','COPYRIGHT','PRODDATESTDY','FUNDAG','DISTRBTR','SERNAME','VERSION','BIBLCITSTDY','TIMEPRD','COLLDATE','GEOGCOVER','GEOGUNIT','ANLYUNIT','UNIVERSE','DATAKIND','CLEANOPS','CONFDEC','SPECPERM','RESTRCTN','NOTES','ABSTRACT')
+  elements = c('TITL',
+  'IDNO',
+  'PRODUCER',
+  'PRODDATEDOC',
+  'BIBLCITDOC',
+  'AUTHENTY',
+  'COPYRIGHT',
+  'PRODDATESTDY',
+  'FUNDAG',
+  'DISTRBTR',
+  'SERNAME',
+  'VERSION',
+  'BIBLCITSTDY',
+  'TIMEPRD',
+  'COLLDATE',
+  'GEOGCOVER',
+  'GEOGUNIT',
+  'ANLYUNIT',
+  'UNIVERSE',
+  'DATAKIND',
+  'CLEANOPS',
+  'CONFDEC',
+  'SPECPERM',
+  'RESTRCTN',
+  'NOTES',
+  'ABSTRACT')
     
     stdydscr=as.data.frame(matrix(nrow=1,ncol=length(elements), byrow=TRUE))
     names(stdydscr)=elements
@@ -297,9 +322,9 @@ Maintainer: Who to complain to <ivan.hanigan@gmail.com>
     }
     stdydscr$PRODDATESTDY <- format(as.Date( substr(stdydscr$PRODDATESTDY,1,10),'%Y-%m-%d'),"%d/%b/%Y")
     stdydscr$PRODDATEDOC <- format(as.Date( substr(stdydscr$PRODDATEDOC,1,10),'%Y-%m-%d'),"%d/%b/%Y")
-
-
-
+  
+  
+  
     # TASK add a caveat that if NOTES is null then NCEPH Unrestricted
     return(stdydscr)
   }
@@ -670,6 +695,22 @@ function (hostip = NA, db = NA, user = NA, p = NA, os = "linux",
 #+begin_src R :session *R* :tangle no :exports none :eval no
 ################################################################
 # name:connect2postgres2
+
+#+end_src
+
+** data_inventory_etl
+*** R-data_inventory_etl
+#+name:data_inventory_etl
+#+begin_src R :session *R* :tangle R/data_inventory_etl.r :exports none :eval no
+################################################################
+# name:data_inventory_etl
+
+#+end_src
+*** test-data_inventory_etl
+#+name:data_inventory_etl
+#+begin_src R :session *R* :tangle tests/test-data_inventory_etl.r :exports none :eval no
+################################################################
+# name:data_inventory_etl
 
 #+end_src
 
