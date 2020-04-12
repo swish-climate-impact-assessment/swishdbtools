@@ -8,9 +8,9 @@
 
 * Introduction
 ** DESCRIPTION
-*** COMMENT DESCRIPTION-code
+*** DEPRECATED DESCRIPTION-code NO TANGLE
 #+name:DESCRIPTION
-#+begin_src R :session *R* :tangle DESCRIPTION :exports none :eval no :padline no
+# +begin_src R :session *R* :tangle DESCRIPTION :exports none :eval no :padline no
 Package: swishdbtools
 Type: Package
 Title: Database tools for use with the SWISH project
