@@ -2431,17 +2431,17 @@ function (remote = F)
                           and (nspname = '",schema,"')", sep = "")
       )
     }
-  
+
   #   tables <- tables[grep(schema,tables$nspname),]
   #    tables <- tables[grep(table, tables$relname),]
     if(nrow(tables) > 0)
       {
         tables <- tables[order(tables$relname),]
       }
-  
+
     return(tables)
   }
-  
+
 #+end_src
 
 #+RESULTS: pgListTables
@@ -2642,14 +2642,14 @@ function (remote = F)
 #+name:postgis_raster_extract
 #+begin_src R :session *R* :tangle R/postgis_raster_extract.r :exports none :eval no
   ################################################################
-  
+
   postgis_raster_extract <- function(conn, x, y, fun = NA, eval = FALSE,
                                      zone_label, value_label = NA,
                                      into_a_table = FALSE)
   {
   # assumptions
   out_schema <- "public"
-  
+
   if(is.data.frame(y))
     {
       # assume location is from gGeoCode2, dataframe with address,  lat, long
@@ -2664,7 +2664,7 @@ function (remote = F)
                        ,",srid,") as the_geom
   )", sep = "")
     }
-  
+
   #                   into ",value_label,"_join_", pwcName,
   sql <- paste("SELECT pt.",zone_label,", cast('",x,"' as text) as raster_layer,
   ST_Value(rt.rast, pt.the_geom) as ",value_label,
@@ -2672,8 +2672,8 @@ function (remote = F)
   ",y," pt
   WHERE ST_Intersects(rast, the_geom)
   ", sep ="")
-  
-  
+
+
   if(into_a_table)
   {
     out_table <- paste(y, "_extract_",value_label, sep = "")
@@ -2686,18 +2686,18 @@ function (remote = F)
       sql_insert <- paste("INSERT INTO ", out_schema, ".", out_table, " (", zone_label, ", raster_layer, ", value_label, ")", sep = "")
       sql <- paste(sql_insert, sql, sep = "\n")
     }
-  
+
   }
-  
+
   if(eval)
     {
       dbSendQuery(conn, sql)
     } else {
       return(sql)
     }
-  
+
   }
-  
+
 #+end_src
 *** man-postgis_raster_extract
 #+name:postgis_raster_extract
@@ -3869,6 +3869,58 @@ sql <- sql_subset(conn=ch, x='spatial_ref_sys',
 #NB prefer int and double (float8) rather than bigint and numeric
 #+end_src
 ** COMMENT DEPRECATED, MOVED TO RTAMET sql_tsfill
+*** R-sql_tsfill
+#+name:sql_tsfill
+#+begin_src R :session *R* :tangle R/sql_tsfill.r :exports none :eval no
+  ################################################################
+  # name:sql_tsfill
+  # NB see http://www.ats.ucla.edu/stat/stata/faq/fill_down.htm
+  # fills a variable in a table for missing combinations of variable1 ... variableN
+  # returns filled table
+  # 'variableName' to be filled
+  # 'fillValue' for filled variable 
+  # 'variable1' values for category variable 1, where names(variable1) is the name of variable1
+  # variable2, ...,  variableN - values and names of category variable 2 ... N
+  sql_tsfill <- function(tableIn, variableName, fillValue, ...)
+  {
+    #argumentNames <- c(deparse(substitute(variable1)), sapply(substitute(list(...))[-1], deparse))
+    #argumentNames <- paste(collapse = ", ", argumentNames)
+
+   
+    otherVariables <- list(...)
+    for(variableIndex in 1:length(otherVariables)) 
+    {
+        if(variableIndex == 1) {
+            variable <- otherVariables[variableIndex]
+            argumentNames <- paste(sep = "", names(variable))
+        } else {
+            variable <- otherVariables[variableIndex]
+            argumentNames <- paste(sep="", argumentNames, ", ", names(variable))
+        }
+    }
+
+    
+    categoryExpression <- paste(sep = "", "t1.", names(variable1) ," = t2.", names(variable1))
+    otherVariables <- list(...)
+    for(variableIndex in 1:length(otherVariables)) 
+    {
+      variable <- otherVariables[variableIndex]
+      categoryExpression <- paste(sep="", categoryExpression, "\r\n", " and ", "t1.", names(variable), " = t2.", names(variable))
+    }
+    
+    tableName <- deparse(substitute(tableIn))
+    case <- paste(sep = "", "case when ", variableName, " is null then ", fillValue, " else ", variableName, " end")
+    joinExpression <- paste(sep = "", "(select ", argumentNames, " from ",tableName,") ", "\r\n", "t1 left join ", tableName, " t2 on ", "\r\n", categoryExpression)
+    sql <- paste(sep = "", "select t1.*, ", "\r\n", case, "\r\n", " as ", variableName, " from ", "\r\n", joinExpression)
+    ##cat(sql)
+    tableOut <-  sqldf(sql, drv = 'SQLite')
+    
+    return(tableOut)
+  }
+
+
+
+#+end_src
 *** test-sql_tsfill
 #+name:sql_tsfill
 #+begin_src R :session *R* :tangle tests/test-sql_tsfill.r :exports none :eval no
@@ -3879,22 +3931,75 @@ sql <- sql_subset(conn=ch, x='spatial_ref_sys',
   source("../R/sql_tsfill.r")
   require(sqldf)
   #sparseTable <- read.csv("../FillTest.csv")
-  sparseTable <- "factorA, factorB, value
-  A, X, 1
-  A, Z, 2
-  B, Y, 3
+  sparseTable <- "postcode, age, date, value
+  A, X, 1, 10
+  A, Z, 2, 20
+  B, Y, 3, 10
   "
   tableIn <- read.csv(textConnection(sparseTable))
-  variable1 <- as.data.frame(toupper(letters[1:4]))
-  names(variable1) <- 'factorA'
-  
-  variable2 <- as.data.frame(c(1:3))
-  names(variable2) <- 'factorB'
-  
-  filledTable <- sql_tsfill(tableIn, "value", -1, variable1, variable2)
-  #filledTable
-  
-  correct <- "factorA, factorB, value
+
+  ## variable1 <- as.data.frame(toupper(letters[1:4]))
+  ## names(variable1) <- 'factorA'
+
+  ## variable2 <- as.data.frame(c("X", "Y", "Z"))
+  ## names(variable2) <- 'factorB'
+  ## tableIn
+
+  ## debug(sql_tsfill)
+  ## filledTable <- sql_tsfill(
+  ##     tableIn = tableIn
+  ##    ,
+  ##     variableName = "value"
+  ##    ,
+
+  ##     fillValue = -1
+  ##    ,
+  ##     tableIn$factorA
+  ##    ,
+  ##     tableIn$factorB
+  ## )
+
+  ## Filledtable
+  tableIn
+  library(data.table)
+  d1 <- data.table(tableIn)
+  byvars <- names(tableIn)[-ncol(tableIn)]
+  d1
+  merge(tableIn[,"postcode"], tableIn[,"age"], tableIn[,"date"], all.x = T)
+
+  #d2 <- data.table(expand.grid(unique(tableIn$factorA), unique(tableIn$factorB)))
+  res1 <- do.call(cbind, tableIn
+                  lapply(seq_along(v1, function(i) combn(v1, i)))
+  df.1 <- tableIn                
+  ##find all (unique) state-district-county combinations
+  ##df.2 <- unique(df.1[,c("postcode","age", "date")])
+  df.2 <- list(postcode = unique(tableIn$postcode), age = unique(tableIn$age), date = unique(tableIn$date))
+  df.2
+  a <- cross_df(df.2)
+
+  a
+  a[a$postcode == "B",]
+  merge(a, tableIn, all.x = T)
+
+  #find all (unique) years
+  df.3 <- unique(df.1[,"date",drop=FALSE])
+
+  #Cartesian product of combinations
+  df.4 <- merge(df.2,df.3)
+  df.4
+  #merge this with the original data frame,
+  #leaving NA's for unmatched parts in df.4
+  merge(df.1,df.4,all=TRUE)
+
+
+  d2
+  setDT(d2)
+  setnames(d2, names(d2), byvars)
+  d3 <- merge(d2, tableIn, by = byvars, all.x = T)
+
+  d3
+
+  Correct <- "factorA, factorB, value
   A,       1,    -1
   A,       2,    -1
   A,       3,    -1
@@ -3916,44 +4021,6 @@ sql <- sql_subset(conn=ch, x='spatial_ref_sys',
               expect_that(identical(filledTable, correct), is_true())
             }
   )
-  
-#+end_src
-*** R-sql_tsfill
-#+name:sql_tsfill
-#+begin_src R :session *R* :tangle R/sql_tsfill.r :exports none :eval no
-################################################################
-# name:sql_tsfill
-# NB see http://www.ats.ucla.edu/stat/stata/faq/fill_down.htm
-# fills a variable in a table for missing combinations of variable1 ... variableN
-# returns filled table
-# 'variableName' to be filled
-# 'fillValue' for filled variable 
-# 'variable1' values for category variable 1, where names(variable1) is the name of variable1
-# variable2, ...,  variableN - values and names of category variable 2 ... N
-sql_tsfill <- function(tableIn, variableName, fillValue, variable1, ...)
-{
-  argumentNames <- c(deparse(substitute(variable1)), sapply(substitute(list(...))[-1], deparse))
-  argumentNames <- paste(collapse = ", ", argumentNames)
-  
-  categoryExpression <- paste(sep = "", "t1.", names(variable1) ," = t2.", names(variable1))
-  otherVariables <- list(...)
-  for(variableIndex in 1:length(otherVariables)) 
-  {
-    variable <- otherVariables[[variableIndex]]
-    categoryExpression <- paste(sep="", categoryExpression, "\r\n", " and ", "t1.", names(variable), " = t2.", names(variable))
-  }
-  
-  tableName <- deparse(substitute(tableIn))
-  case <- paste(sep = "", "case when ", variableName, " is null then ", fillValue, " else ", variableName, " end")
-  joinExpression <- paste(sep = "", "(select * from ", argumentNames,") ", "\r\n", "t1 left join ", tableName, " t2 on ", "\r\n", categoryExpression)
-  sql <- paste(sep = "", "select t1.*, ", "\r\n", case, "\r\n", " as ", variableName, " from ", "\r\n", joinExpression)
-  
-  tableOut <-  sqldf(sql, drv = 'SQLite')
-  
-  return(tableOut)
-}
-
-
 
 #+end_src
 *** man-sql_tsfill
@@ -4014,6 +4081,49 @@ FillCategoryTimeSeries<-function(tableIn, variableName, fillValue, variable1, ..
 # filledTable = FillCategoryTimeSeries(tableIn, "value", -1, variable1, variable2)
 # 
 
+
+#+end_src
+
+** rbase_tsfill
+*** rbase_tsfill
+#+name:rbase_tsfill
+#+begin_src R :session *R* :tangle no :exports none :eval no
+  'name:rbase_tsfill'
+
+  library(purrr)
+  tableIn <- read.csv(textConnection("postcode, age, date, value
+  A, X, 1, 10
+  A, Z, 2, 20
+  B, Y, 3, 10
+  "))
+  df2 <- list(postcode = unique(tableIn$postcode),
+               age = unique(tableIn$age),
+               date = unique(tableIn$date))
+  df3 <- cross_df(df2)
+  df4 <- merge(df3, tableIn, all.x = T)
+  df4[is.na(df4$value),"value"] <- 0
+  df4
+  "
+     postcode age date value
+  1         A   X    1    10
+  2         A   X    2     0
+  3         A   X    3     0
+  4         A   Y    1     0
+  5         A   Y    2     0
+  6         A   Y    3     0
+  7         A   Z    1     0
+  8         A   Z    2    20
+  9         A   Z    3     0
+  10        B   X    1     0
+  11        B   X    2     0
+  12        B   X    3     0
+  13        B   Y    1     0
+  14        B   Y    2     0
+  15        B   Y    3    10
+  16        B   Z    1     0
+  17        B   Z    2     0
+  18        B   Z    3     0
+  "
 
 #+end_src
 
