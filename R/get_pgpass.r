@@ -20,7 +20,7 @@
     exists <- file.exists(fileName)
     if (!exists & !linux)
     {
-      dir.create(file.path(directory, "postgresql"))
+      if(!file.exists(file.path(directory, "postgresql"))) dir.create(file.path(directory, "postgresql"))
     } else {
       passwordTable <- read.table(fileName, sep = ":", stringsAsFactors=FALSE)
       #return(passwordTable)
