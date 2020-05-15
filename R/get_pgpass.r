@@ -16,7 +16,7 @@
       directory <- Sys.getenv("APPDATA")
       fileName <- file.path(directory, "postgresql", "pgpass.conf")
     }
-#    passwordTable <- get_passwordTable(fileName = fileName)
+    passwordTable <- get_passwordTable(fileName = fileName)
     exists <- file.exists(fileName)
     if (!exists & !linux)
     {
@@ -25,6 +25,7 @@
       passwordTable <- read.table(fileName, sep = ":", stringsAsFactors=FALSE)
       #return(passwordTable)
     }
+
     if(exists('passwordTable'))
     {
       hostColumn <- 1
